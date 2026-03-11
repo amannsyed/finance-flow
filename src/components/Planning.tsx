@@ -145,7 +145,7 @@ const BudgetsTab: React.FC = () => {
           <p className="text-sm mt-1">Set limits for your categories to track your spending.</p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {budgetItems.map(({ cat, limit, spent, percentage, isOver, color }) => (
             <div key={cat} className="bg-white dark:bg-slate-800 p-5 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 transition-colors">
               <div className="flex justify-between items-center mb-3">
@@ -330,7 +330,7 @@ const SubscriptionsTab: React.FC = () => {
           <p className="text-sm mt-1">Track your recurring bills to automatically log them.</p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {subscriptions.map((sub) => {
             const color = getCategoryColor(sub.category);
             return (

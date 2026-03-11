@@ -27,7 +27,7 @@ const AppContent = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 font-sans text-slate-900 dark:text-slate-50 selection:bg-indigo-100 selection:text-indigo-900 dark:selection:bg-indigo-900 dark:selection:text-indigo-100 transition-colors duration-200">
-      <div className="max-w-md mx-auto min-h-screen relative bg-slate-50 dark:bg-slate-900 shadow-2xl shadow-slate-200/50 dark:shadow-black/50 overflow-hidden flex flex-col transition-colors duration-200">
+      <div className="w-full md:max-w-4xl lg:max-w-5xl mx-auto h-[100dvh] relative bg-slate-50 dark:bg-slate-900 shadow-2xl shadow-slate-200/50 dark:shadow-black/50 overflow-hidden flex flex-col transition-colors duration-200 md:border-x md:border-slate-200 dark:md:border-slate-800">
         
         {/* Header */}
         <header className="px-6 pt-12 pb-6 bg-slate-50/80 dark:bg-slate-900/80 backdrop-blur-md sticky top-0 z-20 transition-colors duration-200">

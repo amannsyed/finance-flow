@@ -133,9 +133,9 @@ export const Analytics: React.FC = () => {
     <motion.div 
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-6"
+      className="grid grid-cols-1 md:grid-cols-2 gap-6"
     >
-      <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 transition-colors duration-200">
+      <div className="md:col-span-2 bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 transition-colors duration-200">
         <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-6">Net Savings (6 Months)</h3>
         <div className="h-64 w-full">
           <ResponsiveContainer width="100%" height="100%">
@@ -150,7 +150,7 @@ export const Analytics: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 transition-colors duration-200">
+      <div className="md:col-span-2 bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 transition-colors duration-200">
         <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-6">Income vs Expense</h3>
         <div className="h-64 w-full">
           <ResponsiveContainer width="100%" height="100%">
@@ -299,7 +299,7 @@ export const Analytics: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 transition-colors duration-200">
+      <div className="md:col-span-2 bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 transition-colors duration-200">
         <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-6">Daily Spending (30 Days)</h3>
         <div className="h-64 w-full">
           <ResponsiveContainer width="100%" height="100%">

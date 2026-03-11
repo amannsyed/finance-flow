@@ -48,43 +48,45 @@ export const Dashboard: React.FC = () => {
     <motion.div 
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-6"
+      className="space-y-6 md:space-y-0 md:grid md:grid-cols-12 md:gap-8"
     >
-      <div className="bg-gradient-to-br from-indigo-600 to-violet-700 rounded-3xl p-6 text-white shadow-xl shadow-indigo-500/20">
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center gap-2 text-indigo-100">
-            <Wallet size={20} />
-            <span className="font-medium">Total Balance</span>
+      <div className="md:col-span-5 lg:col-span-4 space-y-6">
+        <div className="bg-gradient-to-br from-indigo-600 to-violet-700 rounded-3xl p-6 text-white shadow-xl shadow-indigo-500/20">
+          <div className="flex justify-between items-center mb-6">
+            <div className="flex items-center gap-2 text-indigo-100">
+              <Wallet size={20} />
+              <span className="font-medium">Total Balance</span>
+            </div>
+            <TrendingUp size={20} className="text-indigo-200" />
           </div>
-          <TrendingUp size={20} className="text-indigo-200" />
-        </div>
-        <div className="text-4xl font-bold mb-8 tracking-tight">
-          £{balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-        </div>
-        
-        <div className="grid grid-cols-2 gap-4">
-          <div className="bg-white/10 rounded-2xl p-4 backdrop-blur-sm">
-            <div className="flex items-center gap-2 text-indigo-100 mb-1 text-sm">
-              <ArrowDownRight size={16} className="text-emerald-400" />
-              Income
-            </div>
-            <div className="font-semibold text-lg">
-              £{thisMonthIncome.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </div>
+          <div className="text-4xl font-bold mb-8 tracking-tight">
+            £{balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
-          <div className="bg-white/10 rounded-2xl p-4 backdrop-blur-sm">
-            <div className="flex items-center gap-2 text-indigo-100 mb-1 text-sm">
-              <ArrowUpRight size={16} className="text-rose-400" />
-              Expense
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-white/10 rounded-2xl p-4 backdrop-blur-sm">
+              <div className="flex items-center gap-2 text-indigo-100 mb-1 text-sm">
+                <ArrowDownRight size={16} className="text-emerald-400" />
+                Income
+              </div>
+              <div className="font-semibold text-lg">
+                £{thisMonthIncome.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </div>
             </div>
-            <div className="font-semibold text-lg">
-              £{thisMonthExpense.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            <div className="bg-white/10 rounded-2xl p-4 backdrop-blur-sm">
+              <div className="flex items-center gap-2 text-indigo-100 mb-1 text-sm">
+                <ArrowUpRight size={16} className="text-rose-400" />
+                Expense
+              </div>
+              <div className="font-semibold text-lg">
+                £{thisMonthExpense.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div>
+      <div className="md:col-span-7 lg:col-span-8">
         <div className="flex justify-between items-end mb-4 px-1">
           <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-100">Recent Activity</h2>
           <span className="text-sm text-indigo-600 dark:text-indigo-400 font-medium">See all</span>

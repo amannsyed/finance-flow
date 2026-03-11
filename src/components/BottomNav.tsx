@@ -12,10 +12,10 @@ interface Props {
 
 export const BottomNav: React.FC<Props> = ({ activeTab, setActiveTab, onAddClick }) => {
   return (
-    <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-slate-100 px-6 py-4 pb-safe flex justify-between items-center z-30 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] rounded-t-3xl">
+    <div className="absolute bottom-0 left-0 right-0 bg-white dark:bg-slate-800 border-t border-slate-100 dark:border-slate-700 px-6 py-4 pb-safe flex justify-between md:justify-around items-center z-30 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] dark:shadow-black/20 rounded-t-3xl transition-colors">
       <button 
         onClick={() => setActiveTab('dashboard')}
-        className={`flex flex-col items-center gap-1 p-2 transition-colors ${activeTab === 'dashboard' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
+        className={`flex flex-col items-center gap-1 p-2 transition-colors ${activeTab === 'dashboard' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
       >
         <Home size={24} strokeWidth={activeTab === 'dashboard' ? 2.5 : 2} />
         <span className="text-[10px] font-medium">Home</span>
@@ -23,7 +23,7 @@ export const BottomNav: React.FC<Props> = ({ activeTab, setActiveTab, onAddClick
       
       <button 
         onClick={() => setActiveTab('transactions')}
-        className={`flex flex-col items-center gap-1 p-2 transition-colors ${activeTab === 'transactions' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
+        className={`flex flex-col items-center gap-1 p-2 transition-colors ${activeTab === 'transactions' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
       >
         <List size={24} strokeWidth={activeTab === 'transactions' ? 2.5 : 2} />
         <span className="text-[10px] font-medium">History</span>
@@ -42,7 +42,7 @@ export const BottomNav: React.FC<Props> = ({ activeTab, setActiveTab, onAddClick
 
       <button 
         onClick={() => setActiveTab('analytics')}
-        className={`flex flex-col items-center gap-1 p-2 transition-colors ${activeTab === 'analytics' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
+        className={`flex flex-col items-center gap-1 p-2 transition-colors ${activeTab === 'analytics' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
       >
         <PieChart size={24} strokeWidth={activeTab === 'analytics' ? 2.5 : 2} />
         <span className="text-[10px] font-medium">Analytics</span>
@@ -50,7 +50,7 @@ export const BottomNav: React.FC<Props> = ({ activeTab, setActiveTab, onAddClick
       
       <button 
         onClick={() => setActiveTab('planning')}
-        className={`flex flex-col items-center gap-1 p-2 transition-colors ${activeTab === 'planning' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
+        className={`flex flex-col items-center gap-1 p-2 transition-colors ${activeTab === 'planning' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
       >
         <Target size={24} strokeWidth={activeTab === 'planning' ? 2.5 : 2} />
         <span className="text-[10px] font-medium">Planning</span>
