@@ -1,0 +1,5 @@
+{
+  "name": "Finance Flow",
+  "description": "A mobile-first finance management app to track daily entries, view spending graphs, and analyze net savings.",
+  "requestFramePermissions": []
+}
