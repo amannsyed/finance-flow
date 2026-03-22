@@ -120,7 +120,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }
     }
     return [
-      'Amex Credit Card',
+      'Amex',
       'Monzo Credit Card',
       'Monzo',
       'Bank of Scotland',
