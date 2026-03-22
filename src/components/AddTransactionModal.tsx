@@ -26,7 +26,7 @@ const evaluateMath = (expr: string): number | null => {
 };
 
 export const AddTransactionModal: React.FC<Props> = ({ isOpen, onClose, initialData }) => {
-  const { transactions, addTransaction, editTransaction, categories, addCategory, removeCategory, banks, addBank } = useFinance();
+  const { transactions, addTransaction, editTransaction, categories, addCategory, removeCategory, banks, addBank, removeBank } = useFinance();
   const [type, setType] = useState<TransactionType>('expense');
   const [amountInput, setAmountInput] = useState('');
   const [calculatedAmount, setCalculatedAmount] = useState<number | null>(null);
@@ -35,6 +35,7 @@ export const AddTransactionModal: React.FC<Props> = ({ isOpen, onClose, initialD
   const [note, setNote] = useState('');
   const [bank, setBank] = useState('');
   const [merchant, setMerchant] = useState('');
+  const [isEditingBanks, setIsEditingBanks] = useState(false);
 
   const [isEditingCategories, setIsEditingCategories] = useState(false);
   const [isAddingCategory, setIsAddingCategory] = useState(false);
@@ -83,6 +84,7 @@ export const AddTransactionModal: React.FC<Props> = ({ isOpen, onClose, initialD
       setNewCategoryName('');
       setIsAddingBank(false);
       setNewBankName('');
+      setIsEditingBanks(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, initialData]);
@@ -433,8 +435,49 @@ export const AddTransactionModal: React.FC<Props> = ({ isOpen, onClose, initialD
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Bank (Optional)</label>
-                      {isAddingBank ? (
+                    <div className="flex justify-between items-center mb-2">
+                      <label className="block text-sm font-medium text-slate-500 dark:text-slate-400">Bank (Optional)</label>
+                      <button 
+                        type="button" 
+                        onClick={() => {
+                          setIsEditingBanks(!isEditingBanks);
+                          setIsAddingBank(false);
+                        }} 
+                        className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300"
+                      >
+                        {isEditingBanks ? 'Done' : 'Edit Banks'}
+                      </button>
+                    </div>
+                      {isEditingBanks ? (
+                        <div className="flex flex-wrap gap-2 mb-4">
+                          {banks.map(b => (
+                            <div key={b} className="relative">
+                              <div className="px-4 py-2 rounded-xl text-sm font-medium bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 pr-8">
+                                {b}
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  removeBank(b);
+                                  if (bank === b) setBank('');
+                                }}
+                                className="absolute right-1 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-full"
+                              >
+                                <X size={14} />
+                              </button>
+                            </div>
+                          ))}
+                          {!isAddingBank && (
+                            <button
+                              type="button"
+                              onClick={() => setIsAddingBank(true)}
+                              className="px-4 py-2 rounded-xl text-sm font-medium bg-slate-50 dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 border border-dashed border-indigo-300 dark:border-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 flex items-center gap-1"
+                            >
+                              <Plus size={16} /> Add
+                            </button>
+                          )}
+                        </div>
+                      ) : isAddingBank ? (
                         <div className="flex items-center gap-2">
                           <input
                             type="text"
