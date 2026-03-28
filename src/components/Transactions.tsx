@@ -5,6 +5,7 @@ import { ArrowDownRight, ArrowUpRight, Search, Filter, Trash2, Download, Upload,
 import { motion, AnimatePresence } from 'motion/react';
 import { getCategoryColor } from '../utils/colors';
 import { AddTransactionModal } from './AddTransactionModal';
+import { ConfirmModal } from './ConfirmModal';
 
 export const Transactions: React.FC = () => {
   const { transactions, deleteTransaction, bulkAddTransactions, banks, categories } = useFinance();
@@ -17,6 +18,7 @@ export const Transactions: React.FC = () => {
   const [search, setSearch] = useState('');
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [deletingTransactionId, setDeletingTransactionId] = useState<string | null>(null);  
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleExportCSV = () => {
@@ -315,7 +317,7 @@ export const Transactions: React.FC = () => {
                       <Edit2 size={18} />
                     </button>
                     <button
-                      onClick={() => deleteTransaction(t.id)}
+                      onClick={() => setDeletingTransactionId(t.id)}
                       className="p-2 text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-full transition-colors"
                       title="Delete transaction"
                     >
@@ -333,6 +335,17 @@ export const Transactions: React.FC = () => {
         isOpen={!!editingTransaction}
         onClose={() => setEditingTransaction(null)}
         initialData={editingTransaction}
+      />
+      <ConfirmModal
+        isOpen={!!deletingTransactionId}
+        title="Delete Transaction"
+        message="Are you sure you want to delete this transaction? This action cannot be undone."
+        onConfirm={() => {
+          if (deletingTransactionId) {
+            deleteTransaction(deletingTransactionId);
+          }
+        }}
+        onCancel={() => setDeletingTransactionId(null)}
       />
     </motion.div>
   );
