@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Plus, Trash2, Edit2, Check, X, Calendar, CreditCard, Target } from 'lucide-react';
 import { getCategoryColor } from '../utils/colors';
 import { format, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
+import { ConfirmModal } from './ConfirmModal';
 
 export const Planning: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'budgets' | 'subscriptions'>('budgets');
@@ -199,6 +200,7 @@ const SubscriptionsTab: React.FC = () => {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [nextBillingDate, setNextBillingDate] = useState(new Date().toISOString().split('T')[0]);
   const [bank, setBank] = useState('');
+  const [deletingSubscriptionId, setDeletingSubscriptionId] = useState<string | null>(null);
 
   const handleSave = () => {
     const numAmount = parseFloat(amount);
@@ -362,7 +364,7 @@ const SubscriptionsTab: React.FC = () => {
                       </button>
                     </div>
                     <button 
-                      onClick={() => deleteSubscription(sub.id)}
+                      onClick={() => setDeletingSubscriptionId(sub.id)}
                       className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-full transition-colors"
                     >
                       <Trash2 size={18} />
@@ -374,6 +376,18 @@ const SubscriptionsTab: React.FC = () => {
           })}
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={!!deletingSubscriptionId}
+        title="Delete Subscription"
+        message="Are you sure you want to delete this subscription? This action cannot be undone."
+        onConfirm={() => {
+          if (deletingSubscriptionId) {
+            deleteSubscription(deletingSubscriptionId);
+          }
+        }}
+        onCancel={() => setDeletingSubscriptionId(null)}
+      />
     </div>
   );
 };
