@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useFinance } from '../store/FinanceContext';
-import { X, Check } from 'lucide-react';
+import { X, Check, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface Props {
@@ -9,14 +9,16 @@ interface Props {
 }
 
 export const ProfileModal: React.FC<Props> = ({ isOpen, onClose }) => {
-  const { profile, updateProfile } = useFinance();
+  const { profile, updateProfile, resetData } = useFinance();
   const [name, setName] = useState(profile.name);
   const [email, setEmail] = useState(profile.email);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       setName(profile.name);
       setEmail(profile.email);
+      setShowResetConfirm(false);
     }
   }, [isOpen, profile]);
 
@@ -81,6 +83,44 @@ export const ProfileModal: React.FC<Props> = ({ isOpen, onClose }) => {
                 Save Profile
               </button>
             </form>
+
+            <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-700">
+              {!showResetConfirm ? (
+                <button
+                  type="button"
+                  onClick={() => setShowResetConfirm(true)}
+                  className="w-full py-3 text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/20 hover:bg-rose-100 dark:hover:bg-rose-900/40 rounded-2xl font-semibold transition-colors flex items-center justify-center gap-2"
+                >
+                  <AlertTriangle size={20} />
+                  Reset All Data
+                </button>
+              ) : (
+                <div className="bg-rose-50 dark:bg-rose-900/20 p-4 rounded-2xl border border-rose-200 dark:border-rose-800/50">
+                  <p className="text-sm text-rose-800 dark:text-rose-200 font-medium mb-4 text-center">
+                    Are you sure? This will delete all your transactions, budgets, and custom settings permanently.
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        resetData();
+                        onClose();
+                      }}
+                      className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-semibold transition-colors"
+                    >
+                      Yes, Reset
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowResetConfirm(false)}
+                      className="flex-1 py-2.5 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600 rounded-xl font-semibold transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </motion.div>
         </>
       )}
