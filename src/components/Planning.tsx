@@ -3,6 +3,7 @@ import { useFinance, Subscription } from '../store/FinanceContext';
 import { motion, AnimatePresence } from 'motion/react';
 import { Plus, Trash2, Edit2, Check, X, Calendar, CreditCard, Target } from 'lucide-react';
 import { getCategoryColor } from '../utils/colors';
+import { getCurrencySymbol } from '../utils/currency';
 import { format, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 import { ConfirmModal } from './ConfirmModal';
 
@@ -40,7 +41,8 @@ export const Planning: React.FC = () => {
 };
 
 const BudgetsTab: React.FC = () => {
-  const { transactions, categories, budgets, setBudget, removeBudget } = useFinance();
+  const { transactions, categories, budgets, setBudget, removeBudget, profile } = useFinance();
+  const currencySymbol = getCurrencySymbol(profile.currency || 'GBP');
   const [isAdding, setIsAdding] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(categories.expense[0] || '');
   const [amount, setAmount] = useState('');
@@ -111,7 +113,7 @@ const BudgetsTab: React.FC = () => {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Monthly Limit (£)</label>
+                <label className="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Monthly Limit ({currencySymbol})</label>
                 <input 
                   type="number" 
                   value={amount}
@@ -157,7 +159,7 @@ const BudgetsTab: React.FC = () => {
                   <div>
                     <h3 className="font-semibold text-slate-800 dark:text-slate-100">{cat}</h3>
                     <p className="text-xs text-slate-500 dark:text-slate-400">
-                      £{spent.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} of £{limit.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                      {currencySymbol}{spent.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} of {currencySymbol}{limit.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
                     </p>
                   </div>
                 </div>
@@ -179,7 +181,7 @@ const BudgetsTab: React.FC = () => {
               </div>
               {isOver && (
                 <p className="text-xs text-rose-500 dark:text-rose-400 mt-2 font-medium">
-                  Over budget by £{(spent - limit).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  Over budget by {currencySymbol}{(spent - limit).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
               )}
             </div>
@@ -191,7 +193,8 @@ const BudgetsTab: React.FC = () => {
 };
 
 const SubscriptionsTab: React.FC = () => {
-  const { subscriptions, addSubscription, deleteSubscription, updateSubscription, categories, banks } = useFinance();
+  const { subscriptions, addSubscription, deleteSubscription, updateSubscription, categories, banks, profile } = useFinance();
+  const currencySymbol = getCurrencySymbol(profile.currency || 'GBP');
   const [isAdding, setIsAdding] = useState(false);
   
   const [name, setName] = useState('');
@@ -252,7 +255,7 @@ const SubscriptionsTab: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Amount (£)</label>
+                  <label className="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Amount ({currencySymbol})</label>
                   <input 
                     type="number" 
                     value={amount}
@@ -337,24 +340,26 @@ const SubscriptionsTab: React.FC = () => {
             const color = getCategoryColor(sub.category);
             return (
               <div key={sub.id} className={`bg-white dark:bg-slate-800 p-5 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 transition-colors ${!sub.active ? 'opacity-50' : ''}`}>
-                <div className="flex justify-between items-center">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                   <div className="flex items-center gap-4">
-                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${color.bg} ${color.text} dark:bg-opacity-20`}>
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${color.bg} ${color.text} dark:bg-opacity-20`}>
                       <CreditCard size={24} />
                     </div>
                     <div>
                       <h3 className="font-semibold text-slate-800 dark:text-slate-100">{sub.name}</h3>
-                      <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5">
-                        {sub.billingCycle === 'monthly' ? 'Monthly' : 'Yearly'}
-                        <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600" />
-                        Next: {format(new Date(sub.nextBillingDate), 'MMM dd, yyyy')}
+                      <div className="text-xs text-slate-500 dark:text-slate-400 flex flex-wrap items-center gap-x-1 gap-y-0.5 mt-0.5">
+                        <span>{sub.billingCycle === 'monthly' ? 'Monthly' : 'Yearly'}</span>
+                        <div className="flex items-center gap-1">
+                          <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600" />
+                          <span>Next: {format(new Date(sub.nextBillingDate), 'MMM dd, yyyy')}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div className="text-right">
+                  <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto mt-2 sm:mt-0 pt-3 sm:pt-0 border-t sm:border-0 border-slate-100 dark:border-slate-700">
+                    <div className="text-left sm:text-right">
                       <div className="font-semibold text-slate-800 dark:text-slate-100">
-                        £{sub.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        {currencySymbol}{sub.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </div>
                       <button 
                         onClick={() => updateSubscription(sub.id, { active: !sub.active })}
@@ -365,7 +370,7 @@ const SubscriptionsTab: React.FC = () => {
                     </div>
                     <button 
                       onClick={() => setDeletingSubscriptionId(sub.id)}
-                      className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-full transition-colors"
+                      className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-full transition-colors shrink-0"
                     >
                       <Trash2 size={18} />
                     </button>

@@ -4,11 +4,13 @@ import { format, subDays, subMonths, isAfter, isBefore, startOfDay, endOfDay } f
 import { ArrowDownRight, ArrowUpRight, Search, Filter, Trash2, Download, Upload, Edit2, Calendar, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { getCategoryColor } from '../utils/colors';
+import { getCurrencySymbol } from '../utils/currency';
 import { AddTransactionModal } from './AddTransactionModal';
 import { ConfirmModal } from './ConfirmModal';
 
 export const Transactions: React.FC = () => {
-  const { transactions, deleteTransaction, bulkAddTransactions, banks, categories } = useFinance();
+  const { transactions, deleteTransaction, bulkAddTransactions, banks, categories, profile } = useFinance();
+  const currencySymbol = getCurrencySymbol(profile.currency || 'GBP');
   const [filter, setFilter] = useState<'all' | 'income' | 'expense'>('all');
   const [dateFilter, setDateFilter] = useState<'all' | 'last_week' | 'last_month' | 'custom'>('all');
   const [bankFilter, setBankFilter] = useState<string>('all');
@@ -282,47 +284,49 @@ export const Transactions: React.FC = () => {
               return (
                 <div key={t.id} className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                   <div className="flex items-center gap-4">
-                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${color.bg} ${color.text}`}>
+                    <div className={`w-12 h-12 shrink-0 rounded-2xl flex items-center justify-center ${color.bg} ${color.text}`}>
                       {t.type === 'income' ? <ArrowDownRight size={24} /> : <ArrowUpRight size={24} />}
                     </div>
                     <div>
                       <div className="font-semibold text-slate-800 dark:text-slate-100">{t.category}</div>
-                      <div className="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                        {format(new Date(t.date), 'MMM dd, yyyy')}
+                      <div className="text-sm text-slate-500 dark:text-slate-400 flex flex-wrap items-center gap-x-1 gap-y-0.5">
+                        <span>{format(new Date(t.date), 'MMM dd, yyyy')}</span>
                         {t.bank && (
-                          <>
+                          <div className="flex items-center gap-1">
                             <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600" />
                             <span className="font-medium text-indigo-600 dark:text-indigo-400">{t.bank}</span>
-                          </>
+                          </div>
                         )}
                         {t.merchant && (
-                          <>
+                          <div className="flex items-center gap-1">
                             <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600" />
                             <span className="font-medium text-slate-600 dark:text-slate-300">{t.merchant}</span>
-                          </>
+                          </div>
                         )}
                       </div>
                       {t.note && <div className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 line-clamp-1">{t.note}</div>}
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 sm:gap-3 shrink-0">
                     <div className={`font-semibold ${t.type === 'income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-800 dark:text-slate-100'}`}>
-                      {t.type === 'income' ? '+' : '-'}£{t.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      {t.type === 'income' ? '+' : '-'}{currencySymbol}{t.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </div>
+                    <div className="flex items-center gap-1 sm:gap-2">
                     <button
                       onClick={() => setEditingTransaction(t)}
-                      className="p-2 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-full transition-colors"
+                      className="p-1.5 sm:p-2 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-full transition-colors"
                       title="Edit transaction"
                     >
-                      <Edit2 size={18} />
+                      <Edit2 size={16} className="sm:w-[18px] sm:h-[18px]" />
                     </button>
                     <button
                       onClick={() => setDeletingTransactionId(t.id)}
-                      className="p-2 text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-full transition-colors"
+                      className="p-1.5 sm:p-2 text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-full transition-colors"
                       title="Delete transaction"
                     >
-                      <Trash2 size={18} />
+                      <Trash2 size={16} className="sm:w-[18px] sm:h-[18px]" />
                     </button>
+                  </div>
                   </div>
                 </div>
               )

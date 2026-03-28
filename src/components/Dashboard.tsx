@@ -4,9 +4,11 @@ import { ArrowUpRight, ArrowDownRight, Wallet, TrendingUp } from 'lucide-react';
 import { format, isAfter } from 'date-fns';
 import { motion } from 'motion/react';
 import { getCategoryColor } from '../utils/colors';
+import { getCurrencySymbol } from '../utils/currency';
 
 export const Dashboard: React.FC = () => {
-  const { transactions } = useFinance();
+  const { transactions, profile } = useFinance();
+  const currencySymbol = getCurrencySymbol(profile.currency || 'GBP');
 
   const { balance, income, expense, recentTransactions } = useMemo(() => {
     let inc = 0;
@@ -60,7 +62,7 @@ export const Dashboard: React.FC = () => {
             <TrendingUp size={20} className="text-indigo-200" />
           </div>
           <div className="text-4xl font-bold mb-8 tracking-tight">
-            £{balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            {currencySymbol}{balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
           
           <div className="grid grid-cols-2 gap-4">
@@ -70,7 +72,7 @@ export const Dashboard: React.FC = () => {
                 Income
               </div>
               <div className="font-semibold text-lg">
-                £{thisMonthIncome.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {currencySymbol}{thisMonthIncome.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </div>
             </div>
             <div className="bg-white/10 rounded-2xl p-4 backdrop-blur-sm">
@@ -79,7 +81,7 @@ export const Dashboard: React.FC = () => {
                 Expense
               </div>
               <div className="font-semibold text-lg">
-                £{thisMonthExpense.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {currencySymbol}{thisMonthExpense.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </div>
             </div>
           </div>
@@ -101,30 +103,30 @@ export const Dashboard: React.FC = () => {
                 return (
                 <div key={t.id} className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                   <div className="flex items-center gap-4">
-                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${color.bg} ${color.text}`}>
+                    <div className={`w-12 h-12 shrink-0 rounded-2xl flex items-center justify-center ${color.bg} ${color.text}`}>
                       {t.type === 'income' ? <ArrowDownRight size={24} /> : <ArrowUpRight size={24} />}
                     </div>
                     <div>
                       <div className="font-semibold text-slate-800 dark:text-slate-100">{t.category}</div>
-                      <div className="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                        {format(new Date(t.date), 'MMM dd, yyyy')}
+                      <div className="text-sm text-slate-500 dark:text-slate-400 flex flex-wrap items-center gap-x-1 gap-y-0.5">
+                        <span>{format(new Date(t.date), 'MMM dd, yyyy')}</span>
                         {t.bank && (
-                          <>
+                          <div className="flex items-center gap-1">
                             <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600" />
                             <span className="font-medium text-indigo-600 dark:text-indigo-400">{t.bank}</span>
-                          </>
+                          </div>
                         )}
                         {t.merchant && (
-                          <>
+                          <div className="flex items-center gap-1">
                             <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600" />
                             <span className="font-medium text-slate-600 dark:text-slate-300">{t.merchant}</span>
-                          </>
+                          </div>
                         )}
                       </div>
                     </div>
                   </div>
-                  <div className={`font-semibold ${t.type === 'income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-800 dark:text-slate-100'}`}>
-                    {t.type === 'income' ? '+' : '-'}£{t.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  <div className={`font-semibold shrink-0 ${t.type === 'income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-800 dark:text-slate-100'}`}>
+                    {t.type === 'income' ? '+' : '-'}{currencySymbol}{t.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </div>
                 </div>
               )})}

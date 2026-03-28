@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useFinance } from '../store/FinanceContext';
-import { X, Check, AlertTriangle } from 'lucide-react';
+import { X, Check, AlertTriangle, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { CURRENCIES } from '../utils/currency';
 
 interface Props {
   isOpen: boolean;
@@ -9,23 +10,53 @@ interface Props {
 }
 
 export const ProfileModal: React.FC<Props> = ({ isOpen, onClose }) => {
-  const { profile, updateProfile, resetData } = useFinance();
+  const { profile, updateProfile, updateCurrency, resetData } = useFinance();
   const [name, setName] = useState(profile.name);
   const [email, setEmail] = useState(profile.email);
+  const [currency, setCurrency] = useState(profile.currency || 'GBP');
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [isConverting, setIsConverting] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     if (isOpen) {
       setName(profile.name);
       setEmail(profile.email);
+      setCurrency(profile.currency || 'GBP');
       setShowResetConfirm(false);
+      setError('');
     }
   }, [isOpen, profile]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    updateProfile({ name, email });
-    onClose();
+    setError('');
+
+    if (currency !== profile.currency) {
+      setIsConverting(true);
+      try {
+        const res = await fetch(`https://api.frankfurter.app/latest?from=${profile.currency || 'GBP'}&to=${currency}`);
+        if (!res.ok) throw new Error('Failed to fetch exchange rates');
+        const data = await res.json();
+        const rate = data.rates[currency];
+        
+        if (rate) {
+          updateCurrency(currency, rate);
+          updateProfile({ name, email, currency });
+          onClose();
+        } else {
+          throw new Error('Invalid rate received');
+        }
+      } catch (err) {
+        console.error(err);
+        setError('Failed to convert currency. Please check your connection or try again later.');
+      } finally {
+        setIsConverting(false);
+      }
+    } else {
+      updateProfile({ name, email, currency });
+      onClose();
+    }
   };
 
   return (
@@ -75,12 +106,48 @@ export const ProfileModal: React.FC<Props> = ({ isOpen, onClose }) => {
                   placeholder="your@email.com"
                 />
               </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Currency</label>
+                <select
+                  value={currency}
+                  onChange={(e) => setCurrency(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl py-3 px-4 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 dark:focus:border-indigo-400 transition-all"
+                >
+                  {CURRENCIES.map(c => (
+                    <option key={c.code} value={c.code}>
+                      {c.code} - {c.name}
+                    </option>
+                  ))}
+                </select>
+                {currency !== profile.currency && (
+                  <p className="text-xs text-indigo-600 dark:text-indigo-400 mt-2">
+                    Note: Changing currency will automatically convert all your existing transactions and budgets using live exchange rates.
+                  </p>
+                )}
+              </div>
+              
+              {error && (
+                <div className="p-3 bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 text-sm rounded-xl border border-rose-200 dark:border-rose-800">
+                  {error}
+                </div>
+              )}
+
               <button
                 type="submit"
-                className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-semibold text-lg shadow-lg shadow-indigo-500/30 transition-all flex items-center justify-center gap-2"
+                disabled={isConverting}
+                className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 disabled:cursor-not-allowed text-white rounded-2xl font-semibold text-lg shadow-lg shadow-indigo-500/30 transition-all flex items-center justify-center gap-2"
               >
-                <Check size={24} />
-                Save Profile
+                {isConverting ? (
+                  <>
+                    <Loader2 size={24} className="animate-spin" />
+                    Converting Data...
+                  </>
+                ) : (
+                  <>
+                    <Check size={24} />
+                    Save Profile
+                  </>
+                )}
               </button>
             </form>
 

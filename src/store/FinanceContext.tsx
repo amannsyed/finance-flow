@@ -16,6 +16,7 @@ export interface Transaction {
 export interface UserProfile {
   name: string;
   email: string;
+  currency: string;
 }
 
 export interface Categories {
@@ -47,6 +48,7 @@ interface FinanceContextType {
   deleteTransaction: (id: string) => void;
   profile: UserProfile;
   updateProfile: (p: UserProfile) => void;
+  updateCurrency: (newCurrency: string, rate: number) => void;
   categories: Categories;
   addCategory: (type: TransactionType, category: string) => void;
   removeCategory: (type: TransactionType, category: string) => void;
@@ -93,7 +95,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         console.error('Failed to parse profile', e);
       }
     }
-    return { name: 'Finance Flow', email: '' };
+    return { name: 'Finance Flow', email: '', currency: 'GBP' };
   });
 
   const [categories, setCategories] = useState<Categories>(() => {
@@ -187,7 +189,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const resetData = () => {
     setTransactions([]);
-    setProfile({ name: 'Finance Flow', email: '' });
+    setProfile({ name: 'Finance Flow', email: '', currency: 'GBP' });
     setCategories({
       expense: ['Food', 'Transport', 'Entertainment', 'Shopping', 'Bills', 'Health', 'Other'],
       income: ['Salary', 'Freelance', 'Investments', 'Gift', 'Other']
@@ -229,6 +231,19 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const updateProfile = (p: UserProfile) => {
     setProfile(p);
+  };
+
+  const updateCurrency = (newCurrency: string, rate: number) => {
+    setProfile(prev => ({ ...prev, currency: newCurrency }));
+    setTransactions(prev => prev.map(t => ({ ...t, amount: t.amount * rate })));
+    setBudgets(prev => {
+      const newBudgets: Budgets = {};
+      for (const cat in prev) {
+        newBudgets[cat] = prev[cat] * rate;
+      }
+      return newBudgets;
+    });
+    setSubscriptions(prev => prev.map(s => ({ ...s, amount: s.amount * rate })));
   };
 
   const addCategory = (type: TransactionType, category: string) => {
@@ -337,7 +352,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
   return (
     <FinanceContext.Provider value={{ 
       transactions, addTransaction, editTransaction, deleteTransaction, 
-      profile, updateProfile,
+      profile, updateProfile, updateCurrency,
       categories, addCategory, removeCategory,
       banks, addBank, removeBank, bulkAddTransactions,
       budgets, setBudget, removeBudget,

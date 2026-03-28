@@ -34,7 +34,7 @@ export const BottomNav: React.FC<Props> = ({ activeTab, setActiveTab, onAddClick
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={onAddClick}
-          className="bg-indigo-600 text-white p-4 rounded-full shadow-lg shadow-indigo-500/40 flex items-center justify-center border-4 border-white"
+          className="bg-indigo-600 text-white p-4 rounded-full shadow-lg shadow-indigo-500/40 flex items-center justify-center border-4 border-white dark:border-slate-800"
         >
           <Plus size={28} strokeWidth={3} />
         </motion.button>

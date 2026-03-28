@@ -30,7 +30,7 @@ const AppContent = () => {
       <div className="w-full md:max-w-4xl lg:max-w-5xl mx-auto h-[100dvh] relative bg-slate-50 dark:bg-slate-900 shadow-2xl shadow-slate-200/50 dark:shadow-black/50 overflow-hidden flex flex-col transition-colors duration-200 md:border-x md:border-slate-200 dark:md:border-slate-800">
         
         {/* Header */}
-        <header className="px-6 pt-12 pb-6 bg-slate-50/80 dark:bg-slate-900/80 backdrop-blur-md sticky top-0 z-20 transition-colors duration-200">
+        <header className="px-4 sm:px-6 pt-8 md:pt-12 pb-6 bg-slate-50/80 dark:bg-slate-900/80 backdrop-blur-md sticky top-0 z-20 transition-colors duration-200">
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-slate-800 dark:text-white">
@@ -61,7 +61,7 @@ const AppContent = () => {
         </header>
 
         {/* Main Content */}
-        <main className="flex-1 px-6 overflow-y-auto pb-32 scrollbar-hide">
+        <main className="flex-1 px-4 sm:px-6 overflow-y-auto pb-32 scrollbar-hide">
           {activeTab === 'dashboard' && <Dashboard />}
           {activeTab === 'transactions' && <Transactions />}
           {activeTab === 'analytics' && <Analytics />}
