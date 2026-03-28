@@ -66,6 +66,7 @@ interface FinanceContextType {
   
   theme: Theme;
   toggleTheme: () => void;
+  resetData: () => void;
 }
 
 const FinanceContext = createContext<FinanceContextType | undefined>(undefined);
@@ -182,6 +183,24 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const toggleTheme = () => {
     setTheme(prev => prev === 'light' ? 'dark' : 'light');
+  };
+
+  const resetData = () => {
+    setTransactions([]);
+    setProfile({ name: 'Finance Flow', email: '' });
+    setCategories({
+      expense: ['Food', 'Transport', 'Entertainment', 'Shopping', 'Bills', 'Health', 'Other'],
+      income: ['Salary', 'Freelance', 'Investments', 'Gift', 'Other']
+    });
+    setBanks([
+      'Amex',
+      'Monzo Credit Card',
+      'Monzo',
+      'Bank of Scotland',
+      'Revolut'
+    ]);
+    setBudgets({});
+    setSubscriptions([]);
   };
 
   const addTransaction = (t: Omit<Transaction, 'id'>) => {
@@ -323,7 +342,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       banks, addBank, removeBank, bulkAddTransactions,
       budgets, setBudget, removeBudget,
       subscriptions, addSubscription, updateSubscription, deleteSubscription,
-      theme, toggleTheme
+      theme, toggleTheme, resetData
     }}>
       {children}
     </FinanceContext.Provider>
