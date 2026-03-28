@@ -7,9 +7,11 @@ import { getCategoryColor } from '../utils/colors';
 import { AddTransactionModal } from './AddTransactionModal';
 
 export const Transactions: React.FC = () => {
-  const { transactions, deleteTransaction, bulkAddTransactions, categories } = useFinance();
+  const { transactions, deleteTransaction, bulkAddTransactions, banks, categories } = useFinance();
   const [filter, setFilter] = useState<'all' | 'income' | 'expense'>('all');
   const [dateFilter, setDateFilter] = useState<'all' | 'last_week' | 'last_month' | 'custom'>('all');
+  const [bankFilter, setBankFilter] = useState<string>('all');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [search, setSearch] = useState('');
@@ -93,6 +95,8 @@ export const Transactions: React.FC = () => {
 
   const filteredTransactions = transactions.filter(t => {
     if (filter !== 'all' && t.type !== filter) return false;
+    if (bankFilter !== 'all' && t.bank !== bankFilter) return false;
+    if (categoryFilter !== 'all' && t.category !== categoryFilter) return false;
     if (search && !t.category.toLowerCase().includes(search.toLowerCase()) && !t.note.toLowerCase().includes(search.toLowerCase()) && !t.merchant?.toLowerCase().includes(search.toLowerCase())) return false;
 
     if (dateFilter !== 'all') {
@@ -129,8 +133,9 @@ export const Transactions: React.FC = () => {
           />
         </div>
 
-        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide items-center justify-between">
-          <div className="flex gap-2">
+        <div className="flex flex-col gap-3">
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide items-center justify-between">
+            <div className="flex gap-2 shrink-0">
             <button
               onClick={() => setFilter('all')}
               className={`px-6 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${filter === 'all' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'}`}
@@ -151,24 +156,7 @@ export const Transactions: React.FC = () => {
             </button>
           </div>
 
-          <div className="flex gap-2 ml-auto">
-            <div className="relative">
-              <select
-                value={dateFilter}
-                onChange={(e) => setDateFilter(e.target.value as any)}
-                className="appearance-none pl-10 pr-8 py-2 rounded-full bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-              >
-                <option value="all">All Time</option>
-                <option value="last_week">Last 7 Days</option>
-                <option value="last_month">Last 30 Days</option>
-                <option value="custom">Custom Range</option>
-              </select>
-              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={16} />
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
-              </div>
-            </div>
-
+          <div className="flex gap-2 shrink-0 ml-auto">
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={isUploading}
@@ -195,6 +183,54 @@ export const Transactions: React.FC = () => {
             >
               <Download size={18} />
             </button>
+            </div>
+          </div>
+
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+            <div className="relative shrink-0">
+              <select
+                value={bankFilter}
+                onChange={(e) => setBankFilter(e.target.value)}
+                className="appearance-none pl-4 pr-8 py-2 rounded-full bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+              >
+                <option value="all">All Banks</option>
+                {banks.map(b => <option key={b} value={b}>{b}</option>)}
+              </select>
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+              </div>
+            </div>
+
+            <div className="relative shrink-0">
+              <select
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                className="appearance-none pl-4 pr-8 py-2 rounded-full bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+              >
+                <option value="all">All Categories</option>
+                {Array.from(new Set([...categories.income, ...categories.expense])).sort().map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+              </div>
+            </div>
+
+            <div className="relative shrink-0">
+              <select
+                value={dateFilter}
+                onChange={(e) => setDateFilter(e.target.value as any)}
+                className="appearance-none pl-10 pr-8 py-2 rounded-full bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+              >
+                <option value="all">All Time</option>
+                <option value="last_week">Last 7 Days</option>
+                <option value="last_month">Last 30 Days</option>
+                <option value="custom">Custom Range</option>
+              </select>
+              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={16} />
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+              </div>
+            </div>
           </div>
         </div>
 
