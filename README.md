@@ -68,7 +68,7 @@ A personal finance tracker built with React and TypeScript. Track income and exp
 
 | Script            | Description                                                           |
 | ----------------- | --------------------------------------------------------------------- |
-| `npm run dev`     | Start the local dev server (Express API + Vite frontend) on port 3000 |
+| `npm run dev`     | Start the local Vite development server                               |
 | `npm run build`   | Build the production bundle to `dist/`                                |
 | `npm run preview` | Preview the production build locally                                  |
 | `npm run deploy`  | Deploy to GitHub Pages via `gh-pages`                                 |
