@@ -39,7 +39,8 @@ export const ProfileModal: React.FC<Props> = ({ isOpen, onClose }) => {
     if (currency !== profile.currency) {
       setIsConverting(true);
       try {
-        const res = await fetch(`/api/rates?from=${profile.currency || 'GBP'}&to=${currency}`).catch(e => {
+        const t = Date.now();
+        const res = await fetch(`https://convert-transaction.onrender.com/api/rates?from=${profile.currency || 'GBP'}&to=${currency}&_t=${t}`).catch(e => {
           throw new Error(`Network error while fetching exchange rates: ${e.message}`);
         });
         if (!res.ok) {

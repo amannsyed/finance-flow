@@ -21,7 +21,7 @@ A personal finance tracker built with React and TypeScript. Track income and exp
 | Layer      | Technology                           |
 | ---------- | ------------------------------------ |
 | Framework  | React 19 + Vite 6                    |
-| Backend    | Express.js, Google Sheets API        |
+| Backend    | Python FastAPI (`convert_transaction` service) |
 | Language   | TypeScript                           |
 | Styling    | Tailwind CSS v4                      |
 | Charts     | Recharts                             |
@@ -53,18 +53,14 @@ A personal finance tracker built with React and TypeScript. Track income and exp
    npm install
    ```
 
-3. **Environment Setup:**
-   Copy the `.env.example` file to create a `.env` file, then paste your Google Service Account JSON key string for the Google Sheets integration:
-
-   ```bash
-   cp .env.example .env
-   ```
+3. **Backend Configuration:**
+   The frontend is decoupled and strictly configured to hit the external Python back-end service hosted on Render at `https://convert-transaction.onrender.com`.
 
 4. **Run the development server:**
    ```bash
    npm run dev
    ```
-   The app and Express backend API will be available at `http://localhost:3000`.
+   The app will be available at `http://localhost:5173/finance-flow/`.
 
 ---
 

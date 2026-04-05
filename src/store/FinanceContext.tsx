@@ -158,7 +158,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   useEffect(() => {
     // Fetch service account email for manual sharing instructions
-    fetch('/api/health')
+    fetch('https://convert-transaction.onrender.com/api/health')
       .then(res => res.json())
       .then(data => {
         if (data.env?.email) setServiceAccountEmail(data.env.email);
@@ -222,7 +222,8 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const authenticatedFetch = async (url: string, options: RequestInit = {}) => {
-    const response = await fetch(url, {
+    const finalUrl = url.startsWith('http') ? url : `https://convert-transaction.onrender.com${url}`;
+    const response = await fetch(finalUrl, {
       ...options,
       headers: {
         ...options.headers,
