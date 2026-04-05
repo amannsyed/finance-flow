@@ -1,14 +1,30 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useFinance, Transaction } from '../store/FinanceContext';
-import { ArrowUpRight, ArrowDownRight, Wallet, TrendingUp } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, Wallet, TrendingUp, RefreshCw, AlertCircle, Database } from 'lucide-react';
 import { format, isAfter } from 'date-fns';
 import { motion } from 'motion/react';
 import { getCategoryColor } from '../utils/colors';
 import { getCurrencySymbol } from '../utils/currency';
 
 export const Dashboard: React.FC = () => {
-  const { transactions, profile } = useFinance();
+  const { transactions, profile, refreshFromSheet } = useFinance();
   const currencySymbol = getCurrencySymbol(profile.currency || 'GBP');
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
+
+  const handleSync = async () => {
+    setIsSyncing(true);
+    setSyncError(null);
+    try {
+      await refreshFromSheet();
+      alert('Dashboard synced with Google Sheets!');
+    } catch (error: any) {
+      console.error('Sync Error:', error);
+      setSyncError(error.message);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   const { balance, income, expense, recentTransactions } = useMemo(() => {
     let inc = 0;
@@ -59,11 +75,43 @@ export const Dashboard: React.FC = () => {
               <Wallet size={20} />
               <span className="font-medium">Total Balance</span>
             </div>
-            <TrendingUp size={20} className="text-indigo-200" />
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={handleSync}
+                disabled={isSyncing || !profile.sheetId}
+                className={`p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed ${isSyncing ? 'animate-spin' : ''}`}
+                title={profile.sheetId ? "Sync with Google Sheets" : "Setup Google Sync first"}
+              >
+                <RefreshCw size={18} className="text-indigo-100" />
+              </button>
+              <TrendingUp size={20} className="text-indigo-200" />
+            </div>
           </div>
-          <div className="text-4xl font-bold mb-8 tracking-tight">
+          <div className="text-4xl font-bold mb-4 tracking-tight">
             {currencySymbol}{balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
+          
+          {!profile.sheetId && (
+            <div className="mb-6 p-4 bg-white/10 border border-white/20 rounded-2xl backdrop-blur-md">
+              <p className="text-xs text-indigo-100 mb-3 leading-relaxed">
+                Sync your data with Google Sheets to use it as a backend and access it from anywhere.
+              </p>
+              <button 
+                onClick={() => alert('Click your profile icon (top right) to link or create a Google Sheet!')}
+                className="w-full py-2 bg-white text-indigo-600 rounded-xl text-xs font-bold hover:bg-indigo-50 transition-colors flex items-center justify-center gap-2"
+              >
+                <Database size={14} />
+                Setup Google Sync
+              </button>
+            </div>
+          )}
+          
+          {syncError && (
+            <div className="mb-6 p-3 bg-rose-500/20 border border-rose-500/30 rounded-xl flex items-center gap-2 text-xs text-rose-100">
+              <AlertCircle size={14} className="shrink-0" />
+              <span className="truncate">{syncError}</span>
+            </div>
+          )}
           
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-white/10 rounded-2xl p-4 backdrop-blur-sm">

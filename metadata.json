@@ -1,5 +1,24 @@
 {
   "name": "Finance Flow",
+  "short_name": "Finance",
   "description": "A mobile-first finance management app to track daily entries, view spending graphs, and analyze net savings.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [],
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#4f46e5",
+  "icons": [
+    {
+      "src": "https://api.dicebear.com/7.x/shapes/svg?seed=finance&backgroundColor=4f46e5",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://api.dicebear.com/7.x/shapes/svg?seed=finance&backgroundColor=4f46e5",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
 }

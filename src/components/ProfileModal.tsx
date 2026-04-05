@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useFinance } from '../store/FinanceContext';
-import { X, Check, AlertTriangle, Loader2 } from 'lucide-react';
+import { X, Check, AlertTriangle, Loader2, Database, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { CURRENCIES } from '../utils/currency';
 
@@ -10,10 +10,11 @@ interface Props {
 }
 
 export const ProfileModal: React.FC<Props> = ({ isOpen, onClose }) => {
-  const { profile, updateProfile, updateCurrency, resetData } = useFinance();
+  const { profile, updateProfile, updateCurrency, resetData, serviceAccountEmail } = useFinance();
   const [name, setName] = useState(profile.name);
   const [email, setEmail] = useState(profile.email);
   const [currency, setCurrency] = useState(profile.currency || 'GBP');
+  const [sheetId, setSheetId] = useState(profile.sheetId || '');
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [isConverting, setIsConverting] = useState(false);
   const [error, setError] = useState('');
@@ -23,6 +24,7 @@ export const ProfileModal: React.FC<Props> = ({ isOpen, onClose }) => {
       setName(profile.name);
       setEmail(profile.email);
       setCurrency(profile.currency || 'GBP');
+      setSheetId(profile.sheetId || '');
       setShowResetConfirm(false);
       setError('');
     }
@@ -32,29 +34,36 @@ export const ProfileModal: React.FC<Props> = ({ isOpen, onClose }) => {
     e.preventDefault();
     setError('');
 
+    const updatedProfile = { name, email, currency, sheetId };
+
     if (currency !== profile.currency) {
       setIsConverting(true);
       try {
-        const res = await fetch(`https://api.frankfurter.app/latest?from=${profile.currency || 'GBP'}&to=${currency}`);
-        if (!res.ok) throw new Error('Failed to fetch exchange rates');
+        const res = await fetch(`/api/rates?from=${profile.currency || 'GBP'}&to=${currency}`).catch(e => {
+          throw new Error(`Network error while fetching exchange rates: ${e.message}`);
+        });
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({ error: res.statusText }));
+          throw new Error(errorData.error || `Exchange rate API returned ${res.status}`);
+        }
         const data = await res.json();
         const rate = data.rates[currency];
         
         if (rate) {
           updateCurrency(currency, rate);
-          updateProfile({ name, email, currency });
+          updateProfile(updatedProfile);
           onClose();
         } else {
           throw new Error('Invalid rate received');
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error(err);
-        setError('Failed to convert currency. Please check your connection or try again later.');
+        setError(`Failed to convert currency: ${err.message || 'Unknown error'}. Please check your connection or try again later.`);
       } finally {
         setIsConverting(false);
       }
     } else {
-      updateProfile({ name, email, currency });
+      updateProfile(updatedProfile);
       onClose();
     }
   };
@@ -124,6 +133,67 @@ export const ProfileModal: React.FC<Props> = ({ isOpen, onClose }) => {
                     Note: Changing currency will automatically convert all your existing transactions and budgets using live exchange rates.
                   </p>
                 )}
+              </div>
+
+              <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
+                <div className="flex items-center justify-between mb-3">
+                  <label className="text-sm font-medium text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                    <Database size={16} />
+                    Google Sheet Sync
+                  </label>
+                  {sheetId && (
+                    <a 
+                      href={`https://drive.google.com/open?id=${sheetId}`} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-xs text-indigo-600 dark:text-indigo-400 flex items-center gap-1 hover:underline"
+                    >
+                      Open File <ExternalLink size={12} />
+                    </a>
+                  )}
+                </div>
+                
+                <div className="space-y-3">
+                  <input
+                    type="text"
+                    value={sheetId}
+                    onChange={(e) => setSheetId(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl py-3 px-4 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 dark:focus:border-indigo-400 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                    placeholder="Enter Google Sheet or CSV File ID"
+                  />
+                  
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Service Account Email</span>
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(serviceAccountEmail);
+                        alert('Service Account Email copied to clipboard!');
+                      }}
+                      className="text-[10px] font-medium text-indigo-600 dark:text-indigo-400 hover:underline"
+                    >
+                      Copy Email
+                    </button>
+                  </div>
+                  <div className="p-2 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700 mb-3">
+                    <p className="text-[10px] text-slate-600 dark:text-slate-400 font-mono break-all leading-relaxed">
+                      {serviceAccountEmail || 'loading...'}
+                    </p>
+                  </div>
+                  
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500 leading-relaxed mb-3">
+                    Create a new Google Sheet manually by downloading CSV and upload it in Google and share it with the email above as an <b>Editor</b>.
+                  </p>
+
+                  <div className="mt-4 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
+                    <p className="text-[10px] font-medium text-slate-700 dark:text-slate-300 mb-1">Manual Setup (Recommended):</p>
+                    <ol className="text-[9px] text-slate-500 dark:text-slate-400 space-y-1 list-decimal ml-3">
+                      <li>Create a new Google Sheet or upload a CSV file manually.</li>
+                      <li>Click "Share" and add the email above as an <b>Editor</b>.</li>
+                      <li>Copy the ID from the URL and paste it in the field above.</li>
+                    </ol>
+                  </div>
+                </div>
               </div>
               
               {error && (

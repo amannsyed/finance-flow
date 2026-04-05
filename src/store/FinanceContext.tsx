@@ -17,6 +17,7 @@ export interface UserProfile {
   name: string;
   email: string;
   currency: string;
+  sheetId?: string;
 }
 
 export interface Categories {
@@ -55,7 +56,7 @@ interface FinanceContextType {
   banks: string[];
   addBank: (bank: string) => void;
   removeBank: (bank: string) => void;
-  bulkAddTransactions: (transactions: Omit<Transaction, 'id'>[]) => void;
+  bulkAddTransactions: (transactions: (Omit<Transaction, 'id'> & { id?: string })[]) => void;
   
   budgets: Budgets;
   setBudget: (category: string, amount: number) => void;
@@ -69,6 +70,9 @@ interface FinanceContextType {
   theme: Theme;
   toggleTheme: () => void;
   resetData: () => void;
+  refreshFromSheet: () => void;
+  uploadAllToSheet: () => Promise<void>;
+  serviceAccountEmail: string;
 }
 
 const FinanceContext = createContext<FinanceContextType | undefined>(undefined);
@@ -150,6 +154,18 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return 'light';
   });
 
+  const [serviceAccountEmail, setServiceAccountEmail] = useState<string>('');
+
+  useEffect(() => {
+    // Fetch service account email for manual sharing instructions
+    fetch('/api/health')
+      .then(res => res.json())
+      .then(data => {
+        if (data.env?.email) setServiceAccountEmail(data.env.email);
+      })
+      .catch(console.error);
+  }, []);
+
   useEffect(() => {
     localStorage.setItem('finance_flow_transactions_v2', JSON.stringify(transactions));
   }, [transactions]);
@@ -205,28 +221,171 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setSubscriptions([]);
   };
 
-  const addTransaction = (t: Omit<Transaction, 'id'>) => {
-    const newTransaction: Transaction = {
-      ...t,
-      id: Math.random().toString(36).substring(7),
-    };
+  const authenticatedFetch = async (url: string, options: RequestInit = {}) => {
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        ...options.headers,
+        'x-sheet-id': profile.sheetId || ''
+      }
+    });
+
+    if (!response.ok) {
+      let errorMessage = `Server error: ${response.status}`;
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.error || errorMessage;
+      } catch (e) {
+        // If not JSON, try text
+        try {
+          const text = await response.text();
+          if (text) errorMessage = text;
+        } catch (e2) {
+          // Fallback to status text
+          errorMessage = response.statusText || errorMessage;
+        }
+      }
+      throw new Error(errorMessage);
+    }
+
+    return response;
+  };
+
+  const fetchFromSheet = async () => {
+    if (!profile.sheetId) return;
+    try {
+      const response = await authenticatedFetch('/api/sheets');
+      const data = await response.json();
+      
+      if (Array.isArray(data)) {
+        const sheetTransactions: Transaction[] = data.map((item: any) => {
+          let dateStr = new Date().toISOString();
+          if (item.Date) {
+            const d = new Date(item.Date);
+            if (!isNaN(d.getTime())) {
+              dateStr = d.toISOString();
+            }
+          }
+          return {
+            id: item.ID || Math.random().toString(36).substring(7),
+            type: (item.Type || 'expense').toLowerCase() as TransactionType,
+            amount: parseFloat(item.Amount) || 0,
+            category: item.Category || 'Other',
+            date: dateStr,
+            note: item.Note || '',
+            bank: item.Bank || undefined,
+            merchant: item.Merchant || undefined
+          };
+        });
+        setTransactions(sheetTransactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+      }
+    } catch (error: any) {
+      console.error('Failed to fetch from sheet:', error);
+      throw error;
+    }
+  };
+
+  useEffect(() => {
+    if (profile.sheetId) {
+      fetchFromSheet();
+    }
+  }, [profile.sheetId]);
+
+  const refreshFromSheet = () => fetchFromSheet();
+
+  const uploadAllToSheet = async () => {
+    if (!profile.sheetId) return;
+    
+    try {
+      await authenticatedFetch('/api/sheets/batch', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(transactions)
+      });
+    } catch (e: any) {
+      console.error('Bulk upload failed:', e);
+      throw e;
+    }
+  };
+
+  const addTransaction = async (t: Omit<Transaction, 'id'>) => {
+    const id = Math.random().toString(36).substring(7);
+    const newTransaction: Transaction = { ...t, id };
+    
+    // Optimistic update
     setTransactions(prev => [newTransaction, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+
+    // Sync to sheet
+    if (profile.sheetId) {
+      try {
+        await authenticatedFetch('/api/sheets', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...t, id })
+        });
+      } catch (error: any) {
+        console.error('Failed to sync transaction to sheet:', error);
+      }
+    }
   };
 
-  const editTransaction = (id: string, updatedT: Omit<Transaction, 'id'>) => {
+  const editTransaction = async (id: string, updatedT: Omit<Transaction, 'id'>) => {
+    // Optimistic update
     setTransactions(prev => prev.map(t => t.id === id ? { ...updatedT, id } : t).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+
+    // Sync to sheet
+    if (profile.sheetId) {
+      try {
+        await authenticatedFetch(`/api/sheets/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updatedT)
+        });
+      } catch (error: any) {
+        console.error('Failed to update transaction in sheet:', error);
+      }
+    }
   };
 
-  const bulkAddTransactions = (newTransactions: Omit<Transaction, 'id'>[]) => {
+  const bulkAddTransactions = async (newTransactions: (Omit<Transaction, 'id'> & { id?: string })[]) => {
+    // For bulk add, we'll add them locally and then try to sync each to the sheet
+    // In a real app, we'd want a bulk append endpoint
     const withIds = newTransactions.map(t => ({
       ...t,
-      id: Math.random().toString(36).substring(7) + Math.random().toString(36).substring(7)
+      id: t.id || (Math.random().toString(36).substring(7) + Math.random().toString(36).substring(7))
     }));
+
     setTransactions(prev => [...withIds, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+
+    if (profile.sheetId) {
+      for (const t of withIds) {
+        try {
+          await authenticatedFetch('/api/sheets', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(t)
+          });
+        } catch (e: any) {
+          console.error('Bulk sync failed for item:', t, e);
+        }
+      }
+    }
   };
 
-  const deleteTransaction = (id: string) => {
+  const deleteTransaction = async (id: string) => {
+    // Optimistic update
     setTransactions(prev => prev.filter(t => t.id !== id));
+
+    // Sync to sheet
+    if (profile.sheetId) {
+      try {
+        await authenticatedFetch(`/api/sheets/${id}`, {
+          method: 'DELETE'
+        });
+      } catch (error: any) {
+        console.error('Failed to delete transaction from sheet:', error);
+      }
+    }
   };
 
   const updateProfile = (p: UserProfile) => {
@@ -357,7 +516,8 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       banks, addBank, removeBank, bulkAddTransactions,
       budgets, setBudget, removeBudget,
       subscriptions, addSubscription, updateSubscription, deleteSubscription,
-      theme, toggleTheme, resetData
+      theme, toggleTheme, resetData, refreshFromSheet, uploadAllToSheet,
+      serviceAccountEmail
     }}>
       {children}
     </FinanceContext.Provider>

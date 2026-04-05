@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useFinance, TransactionType, Transaction } from '../store/FinanceContext';
 import { format, subDays, subMonths, isAfter, isBefore, startOfDay, endOfDay } from 'date-fns';
-import { ArrowDownRight, ArrowUpRight, Search, Filter, Trash2, Download, Upload, Edit2, Calendar, Loader2 } from 'lucide-react';
+import { ArrowDownRight, ArrowUpRight, Search, Filter, Trash2, Download, Upload, Edit2, Calendar, Database, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { getCategoryColor } from '../utils/colors';
 import { getCurrencySymbol } from '../utils/currency';
@@ -9,7 +9,7 @@ import { AddTransactionModal } from './AddTransactionModal';
 import { ConfirmModal } from './ConfirmModal';
 
 export const Transactions: React.FC = () => {
-  const { transactions, deleteTransaction, bulkAddTransactions, banks, categories, profile } = useFinance();
+  const { transactions, deleteTransaction, bulkAddTransactions, banks, categories, profile, createSheet, uploadAllToSheet } = useFinance();
   const currencySymbol = getCurrencySymbol(profile.currency || 'GBP');
   const [filter, setFilter] = useState<'all' | 'income' | 'expense'>('all');
   const [dateFilter, setDateFilter] = useState<'all' | 'last_week' | 'last_month' | 'custom'>('all');
@@ -20,11 +20,31 @@ export const Transactions: React.FC = () => {
   const [search, setSearch] = useState('');
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [deletingTransactionId, setDeletingTransactionId] = useState<string | null>(null);  
+  const [deletingTransactionId, setDeletingTransactionId] = useState<string | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const handleSyncToSheet = async () => {
+    if (!profile.sheetId) {
+      alert('Click your profile icon (top right) to link or create a Google Sheet!');
+      return;
+    }
+ 
+    setIsSyncing(true);
+    try {
+      // Upload all current transactions to the sheet
+      await uploadAllToSheet();
+      alert('All transactions have been synced to your Google Sheet!');
+    } catch (error: any) {
+      console.error('Sync to Sheet Error:', error);
+      alert('Failed to sync to Google Sheets: ' + error.message);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   const handleExportCSV = () => {
-    const headers = ['Date', 'Type', 'Category', 'Amount', 'Bank', 'Merchant', 'Note'];
+    const headers = ['Date', 'Type', 'Category', 'Amount', 'Bank', 'Merchant', 'Note', 'ID'];
     const csvContent = [
       headers.join(','),
       ...transactions.map(t => {
@@ -35,7 +55,8 @@ export const Transactions: React.FC = () => {
           t.amount,
           `"${(t.bank || '').replace(/"/g, '""')}"`,
           `"${(t.merchant || '').replace(/"/g, '""')}"`,
-          `"${(t.note || '').replace(/"/g, '""')}"`
+          `"${(t.note || '').replace(/"/g, '""')}"`,
+          t.id
         ].join(',');
       })
     ].join('\n');
@@ -101,7 +122,7 @@ export const Transactions: React.FC = () => {
     if (filter !== 'all' && t.type !== filter) return false;
     if (bankFilter !== 'all' && t.bank !== bankFilter) return false;
     if (categoryFilter !== 'all' && t.category !== categoryFilter) return false;
-    if (search && !t.category.toLowerCase().includes(search.toLowerCase()) && !t.note.toLowerCase().includes(search.toLowerCase()) && !t.merchant?.toLowerCase().includes(search.toLowerCase())) return false;
+    if (search && !t.category.toLowerCase().includes(search.toLowerCase()) && !(t.note?.toLowerCase().includes(search.toLowerCase())) && !t.merchant?.toLowerCase().includes(search.toLowerCase())) return false;
 
     if (dateFilter !== 'all') {
       const tDate = new Date(t.date);
@@ -187,6 +208,14 @@ export const Transactions: React.FC = () => {
             >
               <Download size={18} />
             </button>
+            <button 
+                onClick={handleSyncToSheet}
+                disabled={isSyncing}
+                className="p-2 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Sync All to Google Sheets"
+              >
+                {isSyncing ? <Loader2 size={18} className="animate-spin" /> : <Database size={18} />}
+              </button>
             </div>
           </div>
 
@@ -309,7 +338,7 @@ export const Transactions: React.FC = () => {
                   </div>
                   <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 sm:gap-3 shrink-0">
                     <div className={`font-semibold ${t.type === 'income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-800 dark:text-slate-100'}`}>
-                      {t.type === 'income' ? '+' : '-'}{currencySymbol}{t.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      {t.type === 'income' ? '+' : '-'}{currencySymbol}{t.amount.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </div>
                     <div className="flex items-center gap-1 sm:gap-2">
                     <button
@@ -347,6 +376,7 @@ export const Transactions: React.FC = () => {
         onConfirm={() => {
           if (deletingTransactionId) {
             deleteTransaction(deletingTransactionId);
+            setDeletingTransactionId(null);
           }
         }}
         onCancel={() => setDeletingTransactionId(null)}

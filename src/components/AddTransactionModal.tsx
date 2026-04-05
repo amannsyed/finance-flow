@@ -3,6 +3,7 @@ import { useFinance, TransactionType, Transaction } from '../store/FinanceContex
 import { X, Check, Plus, Calculator, Delete } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { getCategoryColor } from '../utils/colors';
+import { getCurrencySymbol } from '../utils/currency';
 
 interface Props {
   isOpen: boolean;
@@ -26,7 +27,8 @@ const evaluateMath = (expr: string): number | null => {
 };
 
 export const AddTransactionModal: React.FC<Props> = ({ isOpen, onClose, initialData }) => {
-  const { transactions, addTransaction, editTransaction, categories, addCategory, removeCategory, banks, addBank, removeBank } = useFinance();
+  const { transactions, addTransaction, editTransaction, categories, addCategory, removeCategory, banks, addBank, removeBank, profile } = useFinance();
+  const currencySymbol = getCurrencySymbol(profile.currency || 'GBP');
   const [type, setType] = useState<TransactionType>('expense');
   const [amountInput, setAmountInput] = useState('');
   const [calculatedAmount, setCalculatedAmount] = useState<number | null>(null);
@@ -96,7 +98,7 @@ export const AddTransactionModal: React.FC<Props> = ({ isOpen, onClose, initialD
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const finalAmount = evaluateMath(amountInput);
-    if (finalAmount === null || finalAmount <= 0 || !category) return;
+    if (finalAmount === null || finalAmount < 0 || !category) return;
 
     const transactionData = {
       type,
@@ -216,7 +218,7 @@ export const AddTransactionModal: React.FC<Props> = ({ isOpen, onClose, initialD
                   onClick={() => setShowCalculator(true)}
                   className={`relative w-full bg-slate-50 dark:bg-slate-800 border ${showCalculator ? 'border-indigo-500 ring-2 ring-indigo-500/20' : 'border-slate-200 dark:border-slate-700'} rounded-2xl py-4 pl-10 pr-4 text-2xl font-semibold text-slate-800 dark:text-slate-100 cursor-pointer transition-all flex items-center justify-between min-h-[64px]`}
                 >
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-2xl font-semibold text-slate-400 dark:text-slate-500">£</span>
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-2xl font-semibold text-slate-400 dark:text-slate-500">{currencySymbol}</span>
                   <span className={amountInput ? 'text-slate-800 dark:text-slate-100' : 'text-slate-400 dark:text-slate-500'}>
                     {amountInput || '0.00'}
                   </span>
@@ -225,7 +227,7 @@ export const AddTransactionModal: React.FC<Props> = ({ isOpen, onClose, initialD
                 
                 {amountInput && /[+\-*/]/.test(amountInput) && calculatedAmount !== null && (
                   <div className="flex items-center gap-2 text-sm text-indigo-600 dark:text-indigo-400 mt-2 font-medium bg-indigo-50 dark:bg-indigo-900/30 px-3 py-2 rounded-lg">
-                    = £{calculatedAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    = {currencySymbol}{calculatedAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </div>
                 )}
 
@@ -551,8 +553,14 @@ export const AddTransactionModal: React.FC<Props> = ({ isOpen, onClose, initialD
                     className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-semibold text-lg shadow-lg shadow-indigo-500/30 transition-all flex items-center justify-center gap-2"
                   >
                     <Check size={24} />
-                    Save Transaction
+                    {initialData ? 'Update Transaction' : 'Save Transaction'}
                   </button>
+
+                  {!profile.sheetId && (
+                    <p className="text-[10px] text-center text-slate-400 dark:text-slate-500 mt-2">
+                      Note: Google Sheet sync is not setup. This transaction will be saved locally only.
+                    </p>
+                  )}
                 </motion.div>
               )}
             </form>
