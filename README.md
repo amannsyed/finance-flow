@@ -10,6 +10,7 @@ A personal finance tracker built with React and TypeScript. Track income and exp
 - **Transactions** — Log and manage income/expense entries with categories and dates
 - **Analytics** — Visual spending breakdowns and trend charts powered by Recharts
 - **Planning** — Budget planning and financial goal tracking
+- **Google Sheets Sync** — Seamlessly backup and sync your transactions with a Google Sheet
 - **Dark Mode** — Persistent light/dark theme toggle
 - **Profile** — Customise your display name and currency
 
@@ -20,6 +21,7 @@ A personal finance tracker built with React and TypeScript. Track income and exp
 | Layer | Technology |
 |---|---|
 | Framework | React 19 + Vite 6 |
+| Backend | Express.js, Google Sheets API |
 | Language | TypeScript |
 | Styling | Tailwind CSS v4 |
 | Charts | Recharts |
@@ -49,11 +51,17 @@ A personal finance tracker built with React and TypeScript. Track income and exp
    npm install
    ```
 
-3. **Run the development server:**
+3. **Environment Setup:**
+   Copy the `.env.example` file to create a `.env` file, then paste your Google Service Account JSON string for the Google Sheets integration:
+   ```bash
+   cp .env.example .env
+   ```
+
+4. **Run the development server:**
    ```bash
    npm run dev
    ```
-   The app will be available at `http://localhost:3000`.
+   The app and Express backend API will be available at `http://localhost:3000`.
 
 ---
 
@@ -61,7 +69,7 @@ A personal finance tracker built with React and TypeScript. Track income and exp
 
 | Script | Description |
 |---|---|
-| `npm run dev` | Start the local dev server on port 3000 |
+| `npm run dev` | Start the local dev server (Express API + Vite frontend) on port 3000 |
 | `npm run build` | Build the production bundle to `dist/` |
 | `npm run preview` | Preview the production build locally |
 | `npm run deploy` | Deploy to GitHub Pages via `gh-pages` |
