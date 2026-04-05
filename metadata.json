@@ -3,7 +3,7 @@
   "short_name": "Finance",
   "description": "A mobile-first finance management app to track daily entries, view spending graphs, and analyze net savings.",
   "requestFramePermissions": [],
-  "start_url": "/",
+  "start_url": "/finance-flow/",
   "display": "standalone",
   "background_color": "#f8fafc",
   "theme_color": "#4f46e5",

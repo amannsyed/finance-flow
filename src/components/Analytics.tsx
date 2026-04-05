@@ -6,11 +6,13 @@ import {
 } from 'recharts';
 import { format, subMonths, startOfMonth, endOfMonth, isWithinInterval, subDays, eachDayOfInterval } from 'date-fns';
 import { motion } from 'motion/react';
+import { getCurrencySymbol } from '../utils/currency';
 
 const COLORS = ['#6366f1', '#ec4899', '#14b8a6', '#f59e0b', '#8b5cf6', '#ef4444', '#10b981'];
 
 export const Analytics: React.FC = () => {
-  const { transactions } = useFinance();
+  const { transactions, profile } = useFinance();
+  const currencySymbol = getCurrencySymbol(profile.currency || 'GBP');
 
   // 1. Income vs Expense over last 6 months
   const monthlyData = useMemo(() => {
@@ -68,7 +70,7 @@ export const Analytics: React.FC = () => {
       let expense = 0;
       transactions.forEach(t => {
         const tDate = new Date(t.date);
-        if (t.type === 'expense' && tDate.getDate() === day.getDate() && tDate.getMonth() === day.getMonth()) {
+        if (t.type === 'expense' && tDate.getFullYear() === day.getFullYear() && tDate.getMonth() === day.getMonth() && tDate.getDate() === day.getDate()) {
           expense += t.amount;
         }
       });
@@ -120,7 +122,7 @@ export const Analytics: React.FC = () => {
             <div key={index} className="flex items-center gap-2 mb-1">
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }} />
               <span className="text-slate-600 dark:text-slate-400">{entry.name}:</span>
-              <span className="font-medium text-slate-900 dark:text-slate-100">£{entry.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              <span className="font-medium text-slate-900 dark:text-slate-100">{currencySymbol}{entry.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
           ))}
         </div>
@@ -142,7 +144,7 @@ export const Analytics: React.FC = () => {
             <LineChart data={monthlyData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" className="dark:stroke-slate-700" />
               <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} dy={10} />
-              <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} tickFormatter={(value) => `£${value}`} />
+              <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} tickFormatter={(value) => `${currencySymbol}${value}`} />
               <Tooltip content={<CustomTooltip />} />
               <Line type="monotone" dataKey="Savings" stroke="#6366f1" strokeWidth={3} dot={{ r: 4, fill: '#6366f1', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 6 }} />
             </LineChart>
@@ -157,7 +159,7 @@ export const Analytics: React.FC = () => {
             <BarChart data={monthlyData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" className="dark:stroke-slate-700" />
               <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} dy={10} />
-              <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} tickFormatter={(value) => `£${value}`} />
+              <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} tickFormatter={(value) => `${currencySymbol}${value}`} />
               <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f8fafc', className: 'dark:fill-slate-700/50' }} />
               <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', paddingTop: '20px' }} />
               <Bar dataKey="Income" fill="#10b981" radius={[4, 4, 0, 0]} barSize={12} />
@@ -193,7 +195,7 @@ export const Analytics: React.FC = () => {
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
               <div className="text-xs text-slate-500 dark:text-slate-400">Total</div>
               <div className="font-bold text-slate-800 dark:text-slate-100">
-                £{categoryData.reduce((sum, item) => sum + item.value, 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                {currencySymbol}{categoryData.reduce((sum, item) => sum + item.value, 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
               </div>
             </div>
           </div>
@@ -205,7 +207,7 @@ export const Analytics: React.FC = () => {
             <div key={entry.name} className="flex items-center gap-2 text-xs">
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
               <span className="text-slate-600 dark:text-slate-400 truncate flex-1">{entry.name}</span>
-              <span className="font-medium text-slate-900 dark:text-slate-100">£{entry.value.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+              <span className="font-medium text-slate-900 dark:text-slate-100">{currencySymbol}{entry.value.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
             </div>
           ))}
         </div>
@@ -237,7 +239,7 @@ export const Analytics: React.FC = () => {
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
               <div className="text-xs text-slate-500 dark:text-slate-400">Total</div>
               <div className="font-bold text-slate-800 dark:text-slate-100">
-                £{incomeCategoryData.reduce((sum, item) => sum + item.value, 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                {currencySymbol}{incomeCategoryData.reduce((sum, item) => sum + item.value, 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
               </div>
             </div>
           </div>
@@ -249,7 +251,7 @@ export const Analytics: React.FC = () => {
             <div key={entry.name} className="flex items-center gap-2 text-xs">
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
               <span className="text-slate-600 dark:text-slate-400 truncate flex-1">{entry.name}</span>
-              <span className="font-medium text-slate-900 dark:text-slate-100">£{entry.value.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+              <span className="font-medium text-slate-900 dark:text-slate-100">{currencySymbol}{entry.value.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
             </div>
           ))}
         </div>
@@ -281,7 +283,7 @@ export const Analytics: React.FC = () => {
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
               <div className="text-xs text-slate-500 dark:text-slate-400">Total</div>
               <div className="font-bold text-slate-800 dark:text-slate-100">
-                £{bankData.reduce((sum, item) => sum + item.value, 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                {currencySymbol}{bankData.reduce((sum, item) => sum + item.value, 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
               </div>
             </div>
           </div>
@@ -293,7 +295,7 @@ export const Analytics: React.FC = () => {
             <div key={entry.name} className="flex items-center gap-2 text-xs">
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
               <span className="text-slate-600 dark:text-slate-400 truncate flex-1">{entry.name}</span>
-              <span className="font-medium text-slate-900 dark:text-slate-100">£{entry.value.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+              <span className="font-medium text-slate-900 dark:text-slate-100">{currencySymbol}{entry.value.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
             </div>
           ))}
         </div>
@@ -312,7 +314,7 @@ export const Analytics: React.FC = () => {
               </defs>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" className="dark:stroke-slate-700" />
               <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 10 }} dy={10} minTickGap={30} />
-              <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} tickFormatter={(value) => `£${value}`} />
+              <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} tickFormatter={(value) => `${currencySymbol}${value}`} />
               <Tooltip content={<CustomTooltip />} />
               <Area type="monotone" dataKey="amount" name="Expense" stroke="#f43f5e" strokeWidth={2} fillOpacity={1} fill="url(#colorAmount)" />
             </AreaChart>

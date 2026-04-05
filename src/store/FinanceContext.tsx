@@ -70,7 +70,7 @@ interface FinanceContextType {
   theme: Theme;
   toggleTheme: () => void;
   resetData: () => void;
-  refreshFromSheet: () => void;
+  refreshFromSheet: () => Promise<void>;
   uploadAllToSheet: () => Promise<void>;
   serviceAccountEmail: string;
 }

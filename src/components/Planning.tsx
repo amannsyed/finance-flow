@@ -389,6 +389,7 @@ const SubscriptionsTab: React.FC = () => {
         onConfirm={() => {
           if (deletingSubscriptionId) {
             deleteSubscription(deletingSubscriptionId);
+            setDeletingSubscriptionId(null);
           }
         }}
         onCancel={() => setDeletingSubscriptionId(null)}

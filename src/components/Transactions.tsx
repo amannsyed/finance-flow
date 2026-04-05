@@ -9,7 +9,7 @@ import { AddTransactionModal } from './AddTransactionModal';
 import { ConfirmModal } from './ConfirmModal';
 
 export const Transactions: React.FC = () => {
-  const { transactions, deleteTransaction, bulkAddTransactions, banks, categories, profile, createSheet, uploadAllToSheet } = useFinance();
+  const { transactions, deleteTransaction, bulkAddTransactions, banks, categories, profile, uploadAllToSheet } = useFinance();
   const currencySymbol = getCurrencySymbol(profile.currency || 'GBP');
   const [filter, setFilter] = useState<'all' | 'income' | 'expense'>('all');
   const [dateFilter, setDateFilter] = useState<'all' | 'last_week' | 'last_month' | 'custom'>('all');

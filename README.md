@@ -123,4 +123,4 @@ This will build the project and push the `dist/` output to the `gh-pages` branch
 
 ## 📄 License
 
-Apache 2.0 — see [`LICENSE`](./LICENSE) for details.
+Apache 2.0
