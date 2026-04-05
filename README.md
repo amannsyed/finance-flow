@@ -18,17 +18,17 @@ A personal finance tracker built with React and TypeScript. Track income and exp
 
 ## 🛠 Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Framework | React 19 + Vite 6 |
-| Backend | Express.js, Google Sheets API |
-| Language | TypeScript |
-| Styling | Tailwind CSS v4 |
-| Charts | Recharts |
-| Animations | Motion (Framer Motion) |
-| Icons | Lucide React |
-| State | React Context API |
-| Utilities | `date-fns`, `clsx`, `tailwind-merge` |
+| Layer      | Technology                           |
+| ---------- | ------------------------------------ |
+| Framework  | React 19 + Vite 6                    |
+| Backend    | Express.js, Google Sheets API        |
+| Language   | TypeScript                           |
+| Styling    | Tailwind CSS v4                      |
+| Charts     | Recharts                             |
+| Animations | Motion (Framer Motion)               |
+| Icons      | Lucide React                         |
+| State      | React Context API                    |
+| Utilities  | `date-fns`, `clsx`, `tailwind-merge` |
 
 ---
 
@@ -41,18 +41,21 @@ A personal finance tracker built with React and TypeScript. Track income and exp
 ### Installation
 
 1. **Clone the repo:**
+
    ```bash
    git clone https://github.com/amannsyed/finance-flow.git
    cd finance-flow
    ```
 
 2. **Install dependencies:**
+
    ```bash
    npm install
    ```
 
 3. **Environment Setup:**
-   Copy the `.env.example` file to create a `.env` file, then paste your Google Service Account JSON string for the Google Sheets integration:
+   Copy the `.env.example` file to create a `.env` file, then paste your Google Service Account JSON key string for the Google Sheets integration:
+
    ```bash
    cp .env.example .env
    ```
@@ -67,14 +70,14 @@ A personal finance tracker built with React and TypeScript. Track income and exp
 
 ## 📜 Available Scripts
 
-| Script | Description |
-|---|---|
-| `npm run dev` | Start the local dev server (Express API + Vite frontend) on port 3000 |
-| `npm run build` | Build the production bundle to `dist/` |
-| `npm run preview` | Preview the production build locally |
-| `npm run deploy` | Deploy to GitHub Pages via `gh-pages` |
-| `npm run lint` | Type-check with TypeScript (`tsc --noEmit`) |
-| `npm run clean` | Remove the `dist/` directory |
+| Script            | Description                                                           |
+| ----------------- | --------------------------------------------------------------------- |
+| `npm run dev`     | Start the local dev server (Express API + Vite frontend) on port 3000 |
+| `npm run build`   | Build the production bundle to `dist/`                                |
+| `npm run preview` | Preview the production build locally                                  |
+| `npm run deploy`  | Deploy to GitHub Pages via `gh-pages`                                 |
+| `npm run lint`    | Type-check with TypeScript (`tsc --noEmit`)                           |
+| `npm run clean`   | Remove the `dist/` directory                                          |
 
 ---
 
