@@ -2,7 +2,7 @@
   "name": "Finance Flow",
   "short_name": "Finance",
   "description": "Track your finances, budgets, and subscriptions.",
-  "start_url": "/",
+  "start_url": "/finance-flow/",
   "display": "standalone",
   "background_color": "#f8fafc",
   "theme_color": "#4f46e5",
