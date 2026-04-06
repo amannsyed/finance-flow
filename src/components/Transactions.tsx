@@ -9,7 +9,7 @@ import { AddTransactionModal } from './AddTransactionModal';
 import { ConfirmModal } from './ConfirmModal';
 
 export const Transactions: React.FC = () => {
-  const { transactions, deleteTransaction, bulkAddTransactions, banks, categories, profile, uploadAllToSheet } = useFinance();
+  const { transactions, deleteTransaction, bulkDeleteTransactions, bulkAddTransactions, banks, categories, profile, uploadAllToSheet } = useFinance();
   const currencySymbol = getCurrencySymbol(profile.currency || 'GBP');
   const [filter, setFilter] = useState<'all' | 'income' | 'expense'>('all');
   const [dateFilter, setDateFilter] = useState<'all' | 'last_week' | 'last_month' | 'custom'>('all');
@@ -25,6 +25,7 @@ export const Transactions: React.FC = () => {
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [deletingTransactionId, setDeletingTransactionId] = useState<string | null>(null);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -264,6 +265,8 @@ export const Transactions: React.FC = () => {
     });
   }, [transactions, filter, bankFilters, categoryFilters, search, dateFilter, startDate, endDate]);
 
+  const hasFilters = filter !== 'all' || bankFilters.length > 0 || categoryFilters.length > 0 || search !== '' || dateFilter !== 'all';
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -332,6 +335,15 @@ export const Transactions: React.FC = () => {
             >
               <Download size={18} />
             </button>
+            {filteredTransactions.length > 0 && (
+              <button
+                onClick={() => setIsBulkDeleting(true)}
+                className="p-2 rounded-full bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800 hover:bg-rose-100 dark:hover:bg-rose-900/50 transition-colors shadow-sm"
+                title={hasFilters ? `Delete ${filteredTransactions.length} filtered transactions` : `Delete all ${filteredTransactions.length} transactions`}
+              >
+                <Trash2 size={18} />
+              </button>
+            )}
             <button 
                 onClick={handleSyncToSheet}
                 disabled={isSyncing}
@@ -622,6 +634,17 @@ export const Transactions: React.FC = () => {
           }
         }}
         onCancel={() => setDeletingTransactionId(null)}
+      />
+
+      <ConfirmModal
+        isOpen={isBulkDeleting}
+        title={hasFilters ? "Delete Filtered Transactions" : "Delete All Transactions"}
+        message={`Are you sure you want to delete ${filteredTransactions.length} transaction(s)? This action cannot be undone.`}
+        onConfirm={() => {
+          bulkDeleteTransactions(filteredTransactions.map(t => t.id));
+          setIsBulkDeleting(false);
+        }}
+        onCancel={() => setIsBulkDeleting(false)}
       />
     </motion.div>
   );

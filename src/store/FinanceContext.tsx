@@ -47,6 +47,7 @@ interface FinanceContextType {
   addTransaction: (t: Omit<Transaction, 'id'>) => void;
   editTransaction: (id: string, t: Omit<Transaction, 'id'>) => void;
   deleteTransaction: (id: string) => void;
+  bulkDeleteTransactions: (ids: string[]) => void;
   profile: UserProfile;
   updateProfile: (p: UserProfile) => void;
   updateCurrency: (newCurrency: string, rate: number) => void;
@@ -396,6 +397,26 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
+  const bulkDeleteTransactions = async (ids: string[]) => {
+    // Optimistic update
+    setTransactions(prev => {
+      const remaining = prev.filter(t => !ids.includes(t.id));
+      
+      // Sync to sheet in background
+      if (profile.sheetId) {
+        authenticatedFetch('/api/sheets/batch', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(remaining)
+        }).catch(error => {
+          console.error('Failed to bulk delete transactions from sheet:', error);
+        });
+      }
+      
+      return remaining;
+    });
+  };
+
   const updateProfile = (p: UserProfile) => {
     setProfile(p);
   };
@@ -518,7 +539,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   return (
     <FinanceContext.Provider value={{ 
-      transactions, addTransaction, editTransaction, deleteTransaction, 
+      transactions, addTransaction, editTransaction, deleteTransaction, bulkDeleteTransactions,
       profile, updateProfile, updateCurrency,
       categories, addCategory, removeCategory,
       banks, addBank, removeBank, bulkAddTransactions,
