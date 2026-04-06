@@ -203,10 +203,11 @@ export const Transactions: React.FC = () => {
       const { data } = await response.json();
 
       const newTransactions = data.map((apiT: any) => ({
-        type: apiT.Type as TransactionType,
+        id: apiT.ID || apiT.id || undefined,
+        type: (apiT.Type || 'expense').toLowerCase() as TransactionType,
         category: apiT.Category || (apiT.Type === 'income' ? categories.income[0] : categories.expense[0]) || 'Other',
-        amount: apiT.Amount,
-        date: new Date(apiT.Date).toISOString(),
+        amount: parseFloat(apiT.Amount) || 0,
+        date: apiT.Date ? new Date(apiT.Date).toISOString() : new Date().toISOString(),
         bank: apiT.Bank || undefined,
         merchant: apiT.Merchant || undefined,
         note: apiT.Note || ''

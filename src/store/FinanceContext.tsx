@@ -260,22 +260,29 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       
       if (Array.isArray(data)) {
         const sheetTransactions: Transaction[] = data.map((item: any) => {
+          // Helper to get value regardless of header casing
+          const getVal = (key: string) => {
+            const upperKey = key.toUpperCase();
+            return item[key] || item[upperKey] || item[key.toLowerCase()] || '';
+          };
+
           let dateStr = new Date().toISOString();
-          if (item.Date) {
-            const d = new Date(item.Date);
+          const rawDate = getVal('Date');
+          if (rawDate) {
+            const d = new Date(rawDate);
             if (!isNaN(d.getTime())) {
               dateStr = d.toISOString();
             }
           }
           return {
-            id: item.ID || Math.random().toString(36).substring(7),
-            type: (item.Type || 'expense').toLowerCase() as TransactionType,
-            amount: parseFloat(item.Amount) || 0,
-            category: item.Category || 'Other',
+            id: getVal('ID') || Math.random().toString(36).substring(7),
+            type: (getVal('Type') || 'expense').toLowerCase() as TransactionType,
+            amount: parseFloat(getVal('Amount')) || 0,
+            category: getVal('Category') || 'Other',
             date: dateStr,
-            note: item.Note || '',
-            bank: item.Bank || undefined,
-            merchant: item.Merchant || undefined
+            note: getVal('Note') || '',
+            bank: getVal('Bank') || undefined,
+            merchant: getVal('Merchant') || undefined
           };
         });
         setTransactions(sheetTransactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
