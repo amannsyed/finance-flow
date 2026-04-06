@@ -9,7 +9,7 @@ import { AddTransactionModal } from './AddTransactionModal';
 import { ConfirmModal } from './ConfirmModal';
 
 export const Transactions: React.FC = () => {
-  const { transactions, deleteTransaction, bulkDeleteTransactions, bulkAddTransactions, banks, categories, profile, uploadAllToSheet } = useFinance();
+  const { transactions, deleteTransaction, bulkDeleteTransactions, bulkAddTransactions, banks, categories, profile, uploadAllToSheet, isSyncing } = useFinance();
   const currencySymbol = getCurrencySymbol(profile.currency || 'GBP');
   const [filter, setFilter] = useState<'all' | 'income' | 'expense'>('all');
   const [dateFilter, setDateFilter] = useState<'all' | 'last_week' | 'last_month' | 'custom'>('all');
@@ -26,7 +26,6 @@ export const Transactions: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [deletingTransactionId, setDeletingTransactionId] = useState<string | null>(null);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const allCategories = useMemo(() => {
@@ -140,7 +139,6 @@ export const Transactions: React.FC = () => {
       return;
     }
  
-    setIsSyncing(true);
     try {
       // Upload all current transactions to the sheet
       await uploadAllToSheet();
@@ -148,8 +146,6 @@ export const Transactions: React.FC = () => {
     } catch (error: any) {
       console.error('Sync to Sheet Error:', error);
       alert('Failed to sync to Google Sheets: ' + error.message);
-    } finally {
-      setIsSyncing(false);
     }
   };
 

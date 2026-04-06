@@ -74,6 +74,7 @@ interface FinanceContextType {
   refreshFromSheet: () => Promise<void>;
   uploadAllToSheet: () => Promise<void>;
   serviceAccountEmail: string;
+  isSyncing: boolean;
 }
 
 const FinanceContext = createContext<FinanceContextType | undefined>(undefined);
@@ -156,6 +157,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
   });
 
   const [serviceAccountEmail, setServiceAccountEmail] = useState<string>('');
+  const [isSyncing, setIsSyncing] = useState<boolean>(false);
 
   useEffect(() => {
     // Fetch service account email for manual sharing instructions
@@ -255,6 +257,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const fetchFromSheet = async () => {
     if (!profile.sheetId) return;
+    setIsSyncing(true);
     try {
       const response = await authenticatedFetch('/api/sheets');
       const data = await response.json();
@@ -291,6 +294,8 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     } catch (error: any) {
       console.error('Failed to fetch from sheet:', error);
       throw error;
+    } finally {
+      setIsSyncing(false);
     }
   };
 
@@ -305,6 +310,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const uploadAllToSheet = async () => {
     if (!profile.sheetId) return;
     
+    setIsSyncing(true);
     try {
       await authenticatedFetch('/api/sheets/batch', {
         method: 'PUT',
@@ -314,6 +320,8 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     } catch (e: any) {
       console.error('Bulk upload failed:', e);
       throw e;
+    } finally {
+      setIsSyncing(false);
     }
   };
 
@@ -326,6 +334,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     // Sync to sheet
     if (profile.sheetId) {
+      setIsSyncing(true);
       try {
         await authenticatedFetch('/api/sheets', {
           method: 'POST',
@@ -334,6 +343,8 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         });
       } catch (error: any) {
         console.error('Failed to sync transaction to sheet:', error);
+      } finally {
+        setIsSyncing(false);
       }
     }
   };
@@ -344,6 +355,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     // Sync to sheet
     if (profile.sheetId) {
+      setIsSyncing(true);
       try {
         await authenticatedFetch(`/api/sheets/${id}`, {
           method: 'PUT',
@@ -352,6 +364,8 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         });
       } catch (error: any) {
         console.error('Failed to update transaction in sheet:', error);
+      } finally {
+        setIsSyncing(false);
       }
     }
   };
@@ -367,16 +381,21 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setTransactions(prev => [...withIds, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
 
     if (profile.sheetId) {
-      for (const t of withIds) {
-        try {
-          await authenticatedFetch('/api/sheets', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(t)
-          });
-        } catch (e: any) {
-          console.error('Bulk sync failed for item:', t, e);
+      setIsSyncing(true);
+      try {
+        for (const t of withIds) {
+          try {
+            await authenticatedFetch('/api/sheets', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(t)
+            });
+          } catch (e: any) {
+            console.error('Bulk sync failed for item:', t, e);
+          }
         }
+      } finally {
+        setIsSyncing(false);
       }
     }
   };
@@ -387,12 +406,15 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     // Sync to sheet
     if (profile.sheetId) {
+      setIsSyncing(true);
       try {
         await authenticatedFetch(`/api/sheets/${id}`, {
           method: 'DELETE'
         });
       } catch (error: any) {
         console.error('Failed to delete transaction from sheet:', error);
+      } finally {
+        setIsSyncing(false);
       }
     }
   };
@@ -404,12 +426,15 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       
       // Sync to sheet in background
       if (profile.sheetId) {
+        setIsSyncing(true);
         authenticatedFetch('/api/sheets/batch', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(remaining)
         }).catch(error => {
           console.error('Failed to bulk delete transactions from sheet:', error);
+        }).finally(() => {
+          setIsSyncing(false);
         });
       }
       
@@ -546,7 +571,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       budgets, setBudget, removeBudget,
       subscriptions, addSubscription, updateSubscription, deleteSubscription,
       theme, toggleTheme, resetData, refreshFromSheet, uploadAllToSheet,
-      serviceAccountEmail
+      serviceAccountEmail, isSyncing
     }}>
       {children}
     </FinanceContext.Provider>
