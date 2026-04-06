@@ -1,7 +1,7 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { useFinance, TransactionType, Transaction } from '../store/FinanceContext';
 import { format, subDays, subMonths, isAfter, isBefore, startOfDay, endOfDay } from 'date-fns';
-import { ArrowDownRight, ArrowUpRight, Search, Filter, Trash2, Download, Upload, Edit2, Calendar, Database, Loader2 } from 'lucide-react';
+import { ArrowDownRight, ArrowUpRight, Search, Filter, Trash2, Download, Upload, Edit2, Calendar, Database, Loader2, Check, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { getCategoryColor } from '../utils/colors';
 import { getCurrencySymbol } from '../utils/currency';
@@ -13,8 +13,12 @@ export const Transactions: React.FC = () => {
   const currencySymbol = getCurrencySymbol(profile.currency || 'GBP');
   const [filter, setFilter] = useState<'all' | 'income' | 'expense'>('all');
   const [dateFilter, setDateFilter] = useState<'all' | 'last_week' | 'last_month' | 'custom'>('all');
-  const [bankFilter, setBankFilter] = useState<string>('all');
-  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [bankFilters, setBankFilters] = useState<string[]>([]);
+  const [isBankDropdownOpen, setIsBankDropdownOpen] = useState(false);
+  const bankDropdownRef = useRef<HTMLDivElement>(null);
+  const [categoryFilters, setCategoryFilters] = useState<string[]>([]);
+  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
+  const categoryDropdownRef = useRef<HTMLDivElement>(null);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [search, setSearch] = useState('');
@@ -23,6 +27,111 @@ export const Transactions: React.FC = () => {
   const [deletingTransactionId, setDeletingTransactionId] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const allCategories = useMemo(() => {
+    const cats = new Set<string>([...categories.income, ...categories.expense]);
+    const counts: Record<string, number> = {};
+    transactions.forEach(t => {
+      cats.add(t.category);
+      counts[t.category] = (counts[t.category] || 0) + 1;
+    });
+    return Array.from(cats).sort((a, b) => (counts[b] || 0) - (counts[a] || 0));
+  }, [categories, transactions]);
+
+  const allBanks = useMemo(() => {
+    const bSet = new Set<string>(banks);
+    const counts: Record<string, number> = {};
+    transactions.forEach(t => {
+      if (t.bank) {
+        bSet.add(t.bank);
+        counts[t.bank] = (counts[t.bank] || 0) + 1;
+      }
+    });
+    return Array.from(bSet).sort((a, b) => (counts[b] || 0) - (counts[a] || 0));
+  }, [banks, transactions]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (categoryDropdownRef.current && !categoryDropdownRef.current.contains(event.target as Node)) {
+        setIsCategoryDropdownOpen(false);
+      }
+      if (bankDropdownRef.current && !bankDropdownRef.current.contains(event.target as Node)) {
+        setIsBankDropdownOpen(false);
+      }
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        if (isCategoryDropdownOpen) {
+          setIsCategoryDropdownOpen(false);
+          categoryDropdownRef.current?.querySelector<HTMLButtonElement>('button[aria-haspopup]')?.focus();
+        }
+        if (isBankDropdownOpen) {
+          setIsBankDropdownOpen(false);
+          bankDropdownRef.current?.querySelector<HTMLButtonElement>('button[aria-haspopup]')?.focus();
+        }
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isCategoryDropdownOpen, isBankDropdownOpen]);
+
+  useEffect(() => {
+    if (isBankDropdownOpen) {
+      const timer = setTimeout(() => {
+        bankDropdownRef.current?.querySelector<HTMLButtonElement>('[role="option"]')?.focus();
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [isBankDropdownOpen]);
+
+  useEffect(() => {
+    if (isCategoryDropdownOpen) {
+      const timer = setTimeout(() => {
+        categoryDropdownRef.current?.querySelector<HTMLButtonElement>('[role="option"]')?.focus();
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [isCategoryDropdownOpen]);
+
+  const handleListboxKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    const container = e.currentTarget;
+    const options = Array.from(container.querySelectorAll('[role="option"]')) as HTMLButtonElement[];
+    if (!options.length) return;
+    
+    const currentIndex = options.findIndex(opt => opt === document.activeElement);
+
+    switch (e.key) {
+      case 'Enter':
+      case ' ':
+        e.preventDefault();
+        if (currentIndex !== -1) {
+          options[currentIndex].click();
+        }
+        break;
+      case 'ArrowDown':
+        e.preventDefault();
+        const nextIdx = currentIndex < options.length - 1 ? currentIndex + 1 : 0;
+        options[nextIdx].focus();
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        const prevIdx = currentIndex > 0 ? currentIndex - 1 : options.length - 1;
+        options[prevIdx].focus();
+        break;
+      case 'Home':
+        e.preventDefault();
+        options[0].focus();
+        break;
+      case 'End':
+        e.preventDefault();
+        options[options.length - 1].focus();
+        break;
+    }
+  };
 
   const handleSyncToSheet = async () => {
     if (!profile.sheetId) {
@@ -118,27 +227,41 @@ export const Transactions: React.FC = () => {
     }
   };
 
-  const filteredTransactions = transactions.filter(t => {
-    if (filter !== 'all' && t.type !== filter) return false;
-    if (bankFilter !== 'all' && t.bank !== bankFilter) return false;
-    if (categoryFilter !== 'all' && t.category !== categoryFilter) return false;
-    if (search && !t.category.toLowerCase().includes(search.toLowerCase()) && !(t.note?.toLowerCase().includes(search.toLowerCase())) && !t.merchant?.toLowerCase().includes(search.toLowerCase())) return false;
-
-    if (dateFilter !== 'all') {
-      const tDate = new Date(t.date);
-      const now = new Date();
-      if (dateFilter === 'last_week') {
-        if (isBefore(tDate, startOfDay(subDays(now, 7)))) return false;
-      } else if (dateFilter === 'last_month') {
-        if (isBefore(tDate, startOfDay(subMonths(now, 1)))) return false;
-      } else if (dateFilter === 'custom') {
-        if (startDate && isBefore(tDate, startOfDay(new Date(startDate)))) return false;
-        if (endDate && isAfter(tDate, endOfDay(new Date(endDate)))) return false;
+  const filteredTransactions = useMemo(() => {
+    return transactions.filter(t => {
+      if (filter !== 'all' && t.type !== filter) return false;
+      if (bankFilters.length > 0 && (!t.bank || !bankFilters.includes(t.bank))) return false;
+      if (categoryFilters.length > 0 && !categoryFilters.includes(t.category)) return false;
+      
+      if (search) {
+        const q = search.toLowerCase();
+        const inCategory = t.category?.toLowerCase().includes(q) ?? false;
+        const inNote = t.note?.toLowerCase().includes(q) ?? false;
+        const inMerchant = t.merchant?.toLowerCase().includes(q) ?? false;
+        const inBank = t.bank?.toLowerCase().includes(q) ?? false;
+        const inAmount = t.amount.toString().includes(q);
+        
+        if (!inCategory && !inNote && !inMerchant && !inBank && !inAmount) {
+          return false;
+        }
       }
-    }
 
-    return true;
-  });
+      if (dateFilter !== 'all') {
+        const tDate = new Date(t.date);
+        const now = new Date();
+        if (dateFilter === 'last_week') {
+          if (isBefore(tDate, startOfDay(subDays(now, 7)))) return false;
+        } else if (dateFilter === 'last_month') {
+          if (isBefore(tDate, startOfDay(subMonths(now, 1)))) return false;
+        } else if (dateFilter === 'custom') {
+          if (startDate && isBefore(tDate, startOfDay(new Date(startDate)))) return false;
+          if (endDate && isAfter(tDate, endOfDay(new Date(endDate)))) return false;
+        }
+      }
+
+      return true;
+    });
+  }, [transactions, filter, bankFilters, categoryFilters, search, dateFilter, startDate, endDate]);
 
   return (
     <motion.div
@@ -219,33 +342,151 @@ export const Transactions: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-            <div className="relative shrink-0">
-              <select
-                value={bankFilter}
-                onChange={(e) => setBankFilter(e.target.value)}
-                className="appearance-none pl-4 pr-8 py-2 rounded-full bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+          <div className="flex flex-wrap items-center gap-2 pb-2">
+            <div className="relative shrink-0" ref={bankDropdownRef}>
+              <button
+                aria-haspopup="listbox"
+                aria-expanded={isBankDropdownOpen}
+                onClick={() => {
+                  setIsBankDropdownOpen(prev => !prev);
+                  setIsCategoryDropdownOpen(false);
+                }}
+                className="appearance-none pl-4 pr-8 py-2 rounded-full bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20 whitespace-nowrap"
               >
-                <option value="all">All Banks</option>
-                {banks.map(b => <option key={b} value={b}>{b}</option>)}
-              </select>
+                {bankFilters.length === 0 ? 'All Banks' : `${bankFilters.length} Banks`}
+              </button>
               <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
               </div>
+
+              <AnimatePresence>
+                {isBankDropdownOpen && (
+                  <motion.div
+                    role="listbox"
+                    aria-label="Filter by bank"
+                    aria-multiselectable="true"
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    transition={{ duration: 0.15, ease: "easeOut" }}
+                    onKeyDown={handleListboxKeyDown}
+                    className="absolute top-full right-0 sm:left-0 sm:right-auto z-50 mt-2 w-56 max-h-60 overflow-y-auto bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 p-2 scrollbar-hide"
+                  >
+                    <button 
+                      type="button"
+                      role="option"
+                      aria-selected={bankFilters.length === 0}
+                      className="w-full text-left flex items-center gap-2 px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-xl cursor-pointer transition-colors focus:outline-none focus:bg-slate-50 dark:focus:bg-slate-700/50"
+                      onClick={() => setBankFilters([])}
+                    >
+                      <div className={`w-4 h-4 shrink-0 rounded border flex items-center justify-center transition-colors ${bankFilters.length === 0 ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-slate-300 dark:border-slate-600 bg-transparent'}`}>
+                        {bankFilters.length === 0 ? <Check size={12} /> : (bankFilters.length > 0 ? <X size={12} className="text-slate-400" /> : null)}
+                      </div>
+                      <span className="text-sm text-slate-700 dark:text-slate-300 font-medium">{bankFilters.length === 0 ? 'All Banks' : 'Clear Filters'}</span>
+                    </button>
+                    
+                    {allBanks.length > 0 && <div className="h-px bg-slate-100 dark:bg-slate-700 my-1 px-2 pointer-events-none" />}
+
+                    {allBanks.map(b => {
+                      const isSelected = bankFilters.includes(b);
+                      return (
+                        <button 
+                          key={b}
+                          type="button"
+                          role="option"
+                          aria-selected={isSelected}
+                          className="w-full text-left flex items-center gap-2 px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-xl cursor-pointer transition-colors focus:outline-none focus:bg-slate-50 dark:focus:bg-slate-700/50"
+                          onClick={() => {
+                            if (isSelected) {
+                              setBankFilters(prev => prev.filter(bank => bank !== b));
+                            } else {
+                              setBankFilters(prev => [...prev, b]);
+                            }
+                          }}
+                        >
+                          <div className={`w-4 h-4 shrink-0 rounded border flex items-center justify-center transition-colors ${isSelected ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-slate-300 dark:border-slate-600'}`}>
+                            {isSelected && <Check size={12} />}
+                          </div>
+                          <span className="text-sm text-slate-700 dark:text-slate-300 truncate">{b}</span>
+                        </button>
+                      );
+                    })}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
-            <div className="relative shrink-0">
-              <select
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
-                className="appearance-none pl-4 pr-8 py-2 rounded-full bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+            <div className="relative shrink-0" ref={categoryDropdownRef}>
+              <button
+                aria-haspopup="listbox"
+                aria-expanded={isCategoryDropdownOpen}
+                onClick={() => {
+                  setIsCategoryDropdownOpen(prev => !prev);
+                  setIsBankDropdownOpen(false);
+                }}
+                className="appearance-none pl-4 pr-8 py-2 rounded-full bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20 whitespace-nowrap"
               >
-                <option value="all">All Categories</option>
-                {Array.from(new Set([...categories.income, ...categories.expense])).sort().map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
+                {categoryFilters.length === 0 ? 'All Categories' : `${categoryFilters.length} Categories`}
+              </button>
               <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
               </div>
+
+              <AnimatePresence>
+                {isCategoryDropdownOpen && (
+                  <motion.div
+                    role="listbox"
+                    aria-label="Filter by category"
+                    aria-multiselectable="true"
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    transition={{ duration: 0.15, ease: "easeOut" }}
+                    onKeyDown={handleListboxKeyDown}
+                    className="absolute top-full right-0 sm:left-0 sm:right-auto z-50 mt-2 w-56 max-h-60 overflow-y-auto bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 p-2 scrollbar-hide"
+                  >
+                    <button 
+                      type="button"
+                      role="option"
+                      aria-selected={categoryFilters.length === 0}
+                      className="w-full text-left flex items-center gap-2 px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-xl cursor-pointer transition-colors focus:outline-none focus:bg-slate-50 dark:focus:bg-slate-700/50"
+                      onClick={() => setCategoryFilters([])}
+                    >
+                      <div className={`w-4 h-4 shrink-0 rounded border flex items-center justify-center transition-colors ${categoryFilters.length === 0 ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-slate-300 dark:border-slate-600 bg-transparent'}`}>
+                        {categoryFilters.length === 0 ? <Check size={12} /> : (categoryFilters.length > 0 ? <X size={12} className="text-slate-400" /> : null)}
+                      </div>
+                      <span className="text-sm text-slate-700 dark:text-slate-300 font-medium">{categoryFilters.length === 0 ? 'All Categories' : 'Clear Filters'}</span>
+                    </button>
+                    
+                    {allCategories.length > 0 && <div className="h-px bg-slate-100 dark:bg-slate-700 my-1 px-2 pointer-events-none" />}
+
+                    {allCategories.map(c => {
+                      const isSelected = categoryFilters.includes(c);
+                      return (
+                        <button 
+                          key={c}
+                          type="button"
+                          role="option"
+                          aria-selected={isSelected}
+                          className="w-full text-left flex items-center gap-2 px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-xl cursor-pointer transition-colors focus:outline-none focus:bg-slate-50 dark:focus:bg-slate-700/50"
+                          onClick={() => {
+                            if (isSelected) {
+                              setCategoryFilters(prev => prev.filter(cat => cat !== c));
+                            } else {
+                              setCategoryFilters(prev => [...prev, c]);
+                            }
+                          }}
+                        >
+                          <div className={`w-4 h-4 shrink-0 rounded border flex items-center justify-center transition-colors ${isSelected ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-slate-300 dark:border-slate-600'}`}>
+                            {isSelected && <Check size={12} />}
+                          </div>
+                          <span className="text-sm text-slate-700 dark:text-slate-300 truncate">{c}</span>
+                        </button>
+                      );
+                    })}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             <div className="relative shrink-0">
