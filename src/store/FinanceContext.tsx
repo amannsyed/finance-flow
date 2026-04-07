@@ -224,13 +224,13 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setSubscriptions([]);
   };
 
-  const authenticatedFetch = async (url: string, options: RequestInit = {}) => {
+  const authenticatedFetch = async (url: string, options: RequestInit = {}, overrideSheetId?: string) => {
     const finalUrl = url.startsWith('http') ? url : `https://convert-transaction.onrender.com${url}`;
     const response = await fetch(finalUrl, {
       ...options,
       headers: {
         ...options.headers,
-        'x-sheet-id': profile.sheetId || ''
+        'x-sheet-id': overrideSheetId !== undefined ? overrideSheetId : (profile.sheetId || '')
       }
     });
 
@@ -255,11 +255,12 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return response;
   };
 
-  const fetchFromSheet = async () => {
-    if (!profile.sheetId) return;
+  const fetchFromSheet = async (overrideSheetId?: string) => {
+    const targetSheetId = overrideSheetId !== undefined ? overrideSheetId : profile.sheetId;
+    if (!targetSheetId) return;
     setIsSyncing(true);
     try {
-      const response = await authenticatedFetch('/api/sheets');
+      const response = await authenticatedFetch('/api/sheets', {}, targetSheetId);
       const data = await response.json();
       
       if (Array.isArray(data)) {
@@ -299,12 +300,6 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
-  useEffect(() => {
-    if (profile.sheetId) {
-      fetchFromSheet();
-    }
-  }, [profile.sheetId]);
-
   const refreshFromSheet = () => fetchFromSheet();
 
   const uploadAllToSheet = async () => {
@@ -329,121 +324,45 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const id = Math.random().toString(36).substring(7);
     const newTransaction: Transaction = { ...t, id };
     
-    // Optimistic update
+    // Local update only
     setTransactions(prev => [newTransaction, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-
-    // Sync to sheet
-    if (profile.sheetId) {
-      setIsSyncing(true);
-      try {
-        await authenticatedFetch('/api/sheets', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...t, id })
-        });
-      } catch (error: any) {
-        console.error('Failed to sync transaction to sheet:', error);
-      } finally {
-        setIsSyncing(false);
-      }
-    }
   };
 
   const editTransaction = async (id: string, updatedT: Omit<Transaction, 'id'>) => {
-    // Optimistic update
+    // Local update only
     setTransactions(prev => prev.map(t => t.id === id ? { ...updatedT, id } : t).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-
-    // Sync to sheet
-    if (profile.sheetId) {
-      setIsSyncing(true);
-      try {
-        await authenticatedFetch(`/api/sheets/${id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(updatedT)
-        });
-      } catch (error: any) {
-        console.error('Failed to update transaction in sheet:', error);
-      } finally {
-        setIsSyncing(false);
-      }
-    }
   };
 
   const bulkAddTransactions = async (newTransactions: (Omit<Transaction, 'id'> & { id?: string })[]) => {
-    // For bulk add, we'll add them locally and then try to sync each to the sheet
-    // In a real app, we'd want a bulk append endpoint
     const withIds = newTransactions.map(t => ({
       ...t,
       id: t.id || (Math.random().toString(36).substring(7) + Math.random().toString(36).substring(7))
     }));
 
+    // Local update only
     setTransactions(prev => [...withIds, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-
-    if (profile.sheetId) {
-      setIsSyncing(true);
-      try {
-        for (const t of withIds) {
-          try {
-            await authenticatedFetch('/api/sheets', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(t)
-            });
-          } catch (e: any) {
-            console.error('Bulk sync failed for item:', t, e);
-          }
-        }
-      } finally {
-        setIsSyncing(false);
-      }
-    }
   };
 
   const deleteTransaction = async (id: string) => {
-    // Optimistic update
+    // Local update only
     setTransactions(prev => prev.filter(t => t.id !== id));
-
-    // Sync to sheet
-    if (profile.sheetId) {
-      setIsSyncing(true);
-      try {
-        await authenticatedFetch(`/api/sheets/${id}`, {
-          method: 'DELETE'
-        });
-      } catch (error: any) {
-        console.error('Failed to delete transaction from sheet:', error);
-      } finally {
-        setIsSyncing(false);
-      }
-    }
   };
 
   const bulkDeleteTransactions = async (ids: string[]) => {
-    // Optimistic update
-    setTransactions(prev => {
-      const remaining = prev.filter(t => !ids.includes(t.id));
-      
-      // Sync to sheet in background
-      if (profile.sheetId) {
-        setIsSyncing(true);
-        authenticatedFetch('/api/sheets/batch', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(remaining)
-        }).catch(error => {
-          console.error('Failed to bulk delete transactions from sheet:', error);
-        }).finally(() => {
-          setIsSyncing(false);
-        });
-      }
-      
-      return remaining;
-    });
+    // Local update only
+    setTransactions(prev => prev.filter(t => !ids.includes(t.id)));
   };
 
   const updateProfile = (p: UserProfile) => {
+    const previousSheetId = profile.sheetId;
     setProfile(p);
+    
+    // If the user just added or changed their sheet ID, trigger a background sync
+    if (p.sheetId && p.sheetId !== previousSheetId) {
+      fetchFromSheet(p.sheetId).catch(err => {
+        console.error('Failed to auto-sync after profile update:', err);
+      });
+    }
   };
 
   const updateCurrency = (newCurrency: string, rate: number) => {

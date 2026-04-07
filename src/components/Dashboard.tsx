@@ -7,13 +7,11 @@ import { getCategoryColor } from '../utils/colors';
 import { getCurrencySymbol } from '../utils/currency';
 
 export const Dashboard: React.FC = () => {
-  const { transactions, profile, refreshFromSheet } = useFinance();
+  const { transactions, profile, refreshFromSheet, isSyncing } = useFinance();
   const currencySymbol = getCurrencySymbol(profile.currency || 'GBP');
-  const [isSyncing, setIsSyncing] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
 
   const handleSync = async () => {
-    setIsSyncing(true);
     setSyncError(null);
     try {
       await refreshFromSheet();
@@ -21,8 +19,6 @@ export const Dashboard: React.FC = () => {
     } catch (error: any) {
       console.error('Sync Error:', error);
       setSyncError(error.message);
-    } finally {
-      setIsSyncing(false);
     }
   };
 
