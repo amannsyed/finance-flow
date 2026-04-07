@@ -19,6 +19,8 @@ export const Transactions: React.FC = () => {
   const [categoryFilters, setCategoryFilters] = useState<string[]>([]);
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
   const categoryDropdownRef = useRef<HTMLDivElement>(null);
+  const [isDateDropdownOpen, setIsDateDropdownOpen] = useState(false);
+  const dateDropdownRef = useRef<HTMLDivElement>(null);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [search, setSearch] = useState('');
@@ -58,6 +60,9 @@ export const Transactions: React.FC = () => {
       if (bankDropdownRef.current && !bankDropdownRef.current.contains(event.target as Node)) {
         setIsBankDropdownOpen(false);
       }
+      if (dateDropdownRef.current && !dateDropdownRef.current.contains(event.target as Node)) {
+        setIsDateDropdownOpen(false);
+      }
     };
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -69,6 +74,10 @@ export const Transactions: React.FC = () => {
           setIsBankDropdownOpen(false);
           bankDropdownRef.current?.querySelector<HTMLButtonElement>('button[aria-haspopup]')?.focus();
         }
+        if (isDateDropdownOpen) {
+          setIsDateDropdownOpen(false);
+          dateDropdownRef.current?.querySelector<HTMLButtonElement>('button[aria-haspopup]')?.focus();
+        }
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -77,7 +86,7 @@ export const Transactions: React.FC = () => {
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isCategoryDropdownOpen, isBankDropdownOpen]);
+  }, [isCategoryDropdownOpen, isBankDropdownOpen, isDateDropdownOpen]);
 
   useEffect(() => {
     if (isBankDropdownOpen) {
@@ -96,6 +105,15 @@ export const Transactions: React.FC = () => {
       return () => clearTimeout(timer);
     }
   }, [isCategoryDropdownOpen]);
+
+  useEffect(() => {
+    if (isDateDropdownOpen) {
+      const timer = setTimeout(() => {
+        dateDropdownRef.current?.querySelector<HTMLButtonElement>('[role="option"]')?.focus();
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [isDateDropdownOpen]);
 
   const handleListboxKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     const container = e.currentTarget;
@@ -359,6 +377,7 @@ export const Transactions: React.FC = () => {
                 onClick={() => {
                   setIsBankDropdownOpen(prev => !prev);
                   setIsCategoryDropdownOpen(false);
+                  setIsDateDropdownOpen(false);
                 }}
                 className="appearance-none pl-4 pr-8 py-2 rounded-full bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20 whitespace-nowrap"
               >
@@ -432,6 +451,7 @@ export const Transactions: React.FC = () => {
                 onClick={() => {
                   setIsCategoryDropdownOpen(prev => !prev);
                   setIsBankDropdownOpen(false);
+                  setIsDateDropdownOpen(false);
                 }}
                 className="appearance-none pl-4 pr-8 py-2 rounded-full bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20 whitespace-nowrap"
               >
@@ -498,21 +518,67 @@ export const Transactions: React.FC = () => {
               </AnimatePresence>
             </div>
 
-            <div className="relative shrink-0">
-              <select
-                value={dateFilter}
-                onChange={(e) => setDateFilter(e.target.value as any)}
-                className="appearance-none pl-10 pr-8 py-2 rounded-full bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+            <div className="relative shrink-0" ref={dateDropdownRef}>
+              <button
+                aria-haspopup="listbox"
+                aria-expanded={isDateDropdownOpen}
+                onClick={() => {
+                  setIsDateDropdownOpen(prev => !prev);
+                  setIsBankDropdownOpen(false);
+                  setIsCategoryDropdownOpen(false);
+                }}
+                className="appearance-none pl-10 pr-8 py-2 rounded-full bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20 whitespace-nowrap"
               >
-                <option value="all">All Time</option>
-                <option value="last_week">Last 7 Days</option>
-                <option value="last_month">Last 30 Days</option>
-                <option value="custom">Custom Range</option>
-              </select>
+                {dateFilter === 'all' ? 'All Time' : dateFilter === 'last_week' ? 'Last 7 Days' : dateFilter === 'last_month' ? 'Last 30 Days' : 'Custom Range'}
+              </button>
               <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={16} />
               <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
               </div>
+
+              <AnimatePresence>
+                {isDateDropdownOpen && (
+                  <motion.div
+                    role="listbox"
+                    aria-label="Filter by date"
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    transition={{ duration: 0.15, ease: "easeOut" }}
+                    onKeyDown={handleListboxKeyDown}
+                    className="absolute top-full right-0 sm:left-auto sm:right-0 z-50 mt-2 w-48 bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 p-2"
+                  >
+                    {[
+                      { value: 'all', label: 'All Time' },
+                      { value: 'last_week', label: 'Last 7 Days' },
+                      { value: 'last_month', label: 'Last 30 Days' },
+                      { value: 'custom', label: 'Custom Range' }
+                    ].map(option => {
+                      const isSelected = dateFilter === option.value;
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          role="option"
+                          aria-selected={isSelected}
+                          className="w-full text-left flex items-center gap-2 px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-xl cursor-pointer transition-colors focus:outline-none focus:bg-slate-50 dark:focus:bg-slate-700/50"
+                          onClick={() => {
+                            setDateFilter(option.value as any);
+                            setIsDateDropdownOpen(false);
+                          }}
+                        >
+                          <div className={`w-4 h-4 shrink-0 rounded-full border flex items-center justify-center transition-colors ${isSelected ? 'border-indigo-600' : 'border-transparent'}`}>
+                            {isSelected && <div className="w-2 h-2 rounded-full bg-indigo-600" />}
+                          </div>
+                          <span className={`text-sm ${isSelected ? 'text-indigo-600 dark:text-indigo-400 font-medium' : 'text-slate-700 dark:text-slate-300'}`}>
+                            {option.label}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
         </div>
