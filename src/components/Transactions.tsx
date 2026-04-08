@@ -279,6 +279,16 @@ export const Transactions: React.FC = () => {
     });
   }, [transactions, filter, bankFilters, categoryFilters, search, dateFilter, startDate, endDate]);
 
+  const { filteredIncome, filteredExpense } = useMemo(() => {
+    let inc = 0;
+    let exp = 0;
+    filteredTransactions.forEach(t => {
+      if (t.type === 'income') inc += t.amount;
+      else exp += t.amount;
+    });
+    return { filteredIncome: inc, filteredExpense: exp };
+  }, [filteredTransactions]);
+
   const hasFilters = filter !== 'all' || bankFilters.length > 0 || categoryFilters.length > 0 || search !== '' || dateFilter !== 'all';
 
   return (
@@ -612,6 +622,21 @@ export const Transactions: React.FC = () => {
             </motion.div>
           )}
         </AnimatePresence>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4 mb-6">
+        <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl p-4 border border-emerald-100 dark:border-emerald-800/30 flex flex-col justify-center">
+          <p className="text-sm text-emerald-600 dark:text-emerald-400 font-medium mb-1">Total Income</p>
+          <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">
+            {currencySymbol}{filteredIncome.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </p>
+        </div>
+        <div className="bg-rose-50 dark:bg-rose-900/20 rounded-2xl p-4 border border-rose-100 dark:border-rose-800/30 flex flex-col justify-center">
+          <p className="text-sm text-rose-600 dark:text-rose-400 font-medium mb-1">Total Expense</p>
+          <p className="text-2xl font-bold text-rose-700 dark:text-rose-300">
+            {currencySymbol}{filteredExpense.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </p>
+        </div>
       </div>
 
       <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden transition-colors duration-200">

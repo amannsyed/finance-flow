@@ -39,8 +39,7 @@ export const ProfileModal: React.FC<Props> = ({ isOpen, onClose }) => {
     if (currency !== profile.currency) {
       setIsConverting(true);
       try {
-        const t = Date.now();
-        const res = await fetch(`https://convert-transaction.onrender.com/api/rates?from=${profile.currency || 'GBP'}&to=${currency}&_t=${t}`).catch(e => {
+        const res = await fetch(`/api/rates?from=${profile.currency || 'GBP'}&to=${currency}`).catch(e => {
           throw new Error(`Network error while fetching exchange rates: ${e.message}`);
         });
         if (!res.ok) {
@@ -85,16 +84,17 @@ export const ProfileModal: React.FC<Props> = ({ isOpen, onClose }) => {
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="absolute bottom-0 left-0 right-0 bg-white dark:bg-slate-900 rounded-t-3xl z-50 p-6 shadow-2xl transition-colors duration-200"
+            className="absolute bottom-0 left-0 right-0 bg-white dark:bg-slate-900 rounded-t-3xl z-50 shadow-2xl transition-colors duration-200 max-h-[90vh] flex flex-col"
           >
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex justify-between items-center p-6 pb-4 border-b border-slate-100 dark:border-slate-800 shrink-0">
               <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">Edit Profile</h2>
               <button onClick={onClose} className="p-2 bg-slate-100 dark:bg-slate-800 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
                 <X size={20} />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="p-6 overflow-y-auto">
+              <form onSubmit={handleSubmit} className="space-y-6">
               <div>
                 <label className="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Name</label>
                 <input
@@ -258,6 +258,7 @@ export const ProfileModal: React.FC<Props> = ({ isOpen, onClose }) => {
                   </div>
                 </div>
               )}
+            </div>
             </div>
           </motion.div>
         </>
