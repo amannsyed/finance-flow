@@ -1,18 +1,19 @@
 # 💸 Finance Flow
 
-A personal finance tracker built with React and TypeScript. Track income and expenses, visualise spending trends, and plan budgets — all in a clean, responsive interface with dark mode support.
+A personal finance tracker built with React 19 and TypeScript. Track income, expenses, and subscriptions, visualise spending trends, and plan budgets — all in a clean, responsive interface with dark mode support.
 
 ---
 
 ## ✨ Features
 
-- **Dashboard** — Overview of income, expenses, and net balance
-- **Transactions** — Log and manage income/expense entries with categories and dates
-- **Analytics** — Visual spending breakdowns and trend charts powered by Recharts
-- **Planning** — Budget planning and financial goal tracking
-- **Google Sheets Sync** — Seamlessly backup and sync your transactions with a Google Sheet
-- **Dark Mode** — Persistent light/dark theme toggle
-- **Profile** — Customise your display name and currency
+- **Dashboard** — Real-time overview of income, expenses, and net balance.
+- **Transactions** — Comprehensive logging with categories, dates, merchants, and bank accounts.
+- **Analytics** — Visual spending breakdowns and trend charts powered by Recharts.
+- **Planning** — Budget management and subscription tracking with auto-logging.
+- **Google Sheets Sync** — Backup and sync transactions with a Google Sheet for cross-platform access.
+- **Multi-Currency** — Support for different currencies with automatic conversion rates.
+- **Dark Mode** — Persistent light/dark theme toggle for comfortable viewing.
+- **Privacy** — Data is stored locally in your browser and only synced to your personal Google Sheet.
 
 ---
 
@@ -21,7 +22,7 @@ A personal finance tracker built with React and TypeScript. Track income and exp
 | Layer      | Technology                           |
 | ---------- | ------------------------------------ |
 | Framework  | React 19 + Vite 6                    |
-| Backend    | Python FastAPI (`convert_transaction` service) |
+| Backend    | Python FastAPI                       |
 | Language   | TypeScript                           |
 | Styling    | Tailwind CSS v4                      |
 | Charts     | Recharts                             |
@@ -36,11 +37,12 @@ A personal finance tracker built with React and TypeScript. Track income and exp
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) (v18 or later recommended)
+- [Node.js](https://nodejs.org/) (v18 or later)
+- [npm](https://www.npmjs.com/) (v9 or later)
 
 ### Installation
 
-1. **Clone the repo:**
+1. **Clone the repository:**
 
    ```bash
    git clone https://github.com/amannsyed/finance-flow.git
@@ -53,27 +55,27 @@ A personal finance tracker built with React and TypeScript. Track income and exp
    npm install
    ```
 
-3. **Backend Configuration:**
-   The frontend is decoupled and strictly configured to hit the external Python back-end service hosted on Render at `https://convert-transaction.onrender.com`.
+3. **Backend Service (Optional):**
+   The application uses an external service at `https://convert-transaction.onrender.com` for Google Sheets integration. No local backend setup is required unless you are hosting your own instance.
 
 4. **Run the development server:**
    ```bash
    npm run dev
    ```
-   The app will be available at `http://localhost:5173/finance-flow/`.
+   The app will be available at `http://localhost:5173`.
 
 ---
 
 ## 📜 Available Scripts
 
-| Script            | Description                                                           |
-| ----------------- | --------------------------------------------------------------------- |
-| `npm run dev`     | Start the local Vite development server                               |
-| `npm run build`   | Build the production bundle to `dist/`                                |
-| `npm run preview` | Preview the production build locally                                  |
-| `npm run deploy`  | Deploy to GitHub Pages via `gh-pages`                                 |
-| `npm run lint`    | Type-check with TypeScript (`tsc --noEmit`)                           |
-| `npm run clean`   | Remove the `dist/` directory                                          |
+| Script            | Description                             |
+| ----------------- | --------------------------------------- |
+| `npm run dev`     | Start the local Vite development server |
+| `npm run build`   | Build the production bundle to `dist/`  |
+| `npm run preview` | Preview the production build locally    |
+| `npm run deploy`  | Deploy to GitHub Pages                  |
+| `npm run lint`    | Type-check with TypeScript              |
+| `npm run clean`   | Remove the `dist/` directory            |
 
 ---
 
@@ -81,27 +83,14 @@ A personal finance tracker built with React and TypeScript. Track income and exp
 
 ```
 finance-flow/
-├── public/                  # Static assets
+├── public/                  # Static assets and manifest
 ├── src/
-│   ├── components/
-│   │   ├── AddTransactionModal.tsx
-│   │   ├── Analytics.tsx
-│   │   ├── BottomNav.tsx
-│   │   ├── ConfirmModal.tsx
-│   │   ├── Dashboard.tsx
-│   │   ├── Planning.tsx
-│   │   ├── ProfileModal.tsx
-│   │   └── Transactions.tsx
-│   ├── store/
-│   │   └── FinanceContext.tsx  # Global state via React Context
-│   ├── utils/
-│   │   ├── colors.ts           # Category colour utilities
-│   │   └── currency.ts         # Currency formatting helpers
-│   ├── App.tsx
-│   ├── main.tsx
-│   └── index.css
-├── .env.example
-├── index.html
+│   ├── components/          # Reusable UI components
+│   ├── store/               # Global state (FinanceContext)
+│   ├── utils/               # Formatting and color utilities
+│   ├── App.tsx              # Main application entry
+│   ├── main.tsx             # React DOM rendering
+│   └── index.css            # Global styles and Tailwind imports
 ├── package.json
 ├── tsconfig.json
 └── vite.config.ts
@@ -111,13 +100,13 @@ finance-flow/
 
 ## 🌍 Deployment
 
-This project is configured for [GitHub Pages](https://pages.github.com/) deployment:
+This project is configured for [GitHub Pages](https://pages.github.com/). To deploy your own instance:
 
-```bash
-npm run deploy
-```
-
-This will build the project and push the `dist/` output to the `gh-pages` branch.
+1. Update the `base` in `vite.config.ts` if necessary.
+2. Run the deploy script:
+   ```bash
+   npm run deploy
+   ```
 
 ---
 
