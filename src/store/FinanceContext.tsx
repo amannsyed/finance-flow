@@ -255,6 +255,36 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return response;
   };
 
+  const extractAndAddMetadata = (txs: Transaction[]) => {
+    setBanks(prev => {
+      const newBanks = new Set(prev);
+      let changed = false;
+      txs.forEach(t => {
+        if (t.bank && !newBanks.has(t.bank)) {
+          newBanks.add(t.bank);
+          changed = true;
+        }
+      });
+      return changed ? Array.from(newBanks) : prev;
+    });
+
+    setCategories(prev => {
+      const newExpense = new Set(prev.expense);
+      const newIncome = new Set(prev.income);
+      let changed = false;
+      txs.forEach(t => {
+        if (t.type === 'expense' && t.category && !newExpense.has(t.category)) {
+          newExpense.add(t.category);
+          changed = true;
+        } else if (t.type === 'income' && t.category && !newIncome.has(t.category)) {
+          newIncome.add(t.category);
+          changed = true;
+        }
+      });
+      return changed ? { expense: Array.from(newExpense), income: Array.from(newIncome) } : prev;
+    });
+  };
+
   const fetchFromSheet = async (overrideSheetId?: string) => {
     const targetSheetId = overrideSheetId !== undefined ? overrideSheetId : profile.sheetId;
     if (!targetSheetId) return;
@@ -291,6 +321,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
           };
         });
         setTransactions(sheetTransactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+        extractAndAddMetadata(sheetTransactions);
       }
     } catch (error: any) {
       console.error('Failed to fetch from sheet:', error);
@@ -326,11 +357,13 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     
     // Local update only
     setTransactions(prev => [newTransaction, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+    extractAndAddMetadata([newTransaction]);
   };
 
   const editTransaction = async (id: string, updatedT: Omit<Transaction, 'id'>) => {
     // Local update only
     setTransactions(prev => prev.map(t => t.id === id ? { ...updatedT, id } : t).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+    extractAndAddMetadata([{ ...updatedT, id }]);
   };
 
   const bulkAddTransactions = async (newTransactions: (Omit<Transaction, 'id'> & { id?: string })[]) => {
@@ -341,6 +374,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     // Local update only
     setTransactions(prev => [...withIds, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+    extractAndAddMetadata(withIds);
   };
 
   const deleteTransaction = async (id: string) => {

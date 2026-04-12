@@ -21,6 +21,8 @@ export const Transactions: React.FC = () => {
   const categoryDropdownRef = useRef<HTMLDivElement>(null);
   const [isDateDropdownOpen, setIsDateDropdownOpen] = useState(false);
   const dateDropdownRef = useRef<HTMLDivElement>(null);
+  const [isExportDropdownOpen, setIsExportDropdownOpen] = useState(false);
+  const exportDropdownRef = useRef<HTMLDivElement>(null);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [search, setSearch] = useState('');
@@ -63,6 +65,9 @@ export const Transactions: React.FC = () => {
       if (dateDropdownRef.current && !dateDropdownRef.current.contains(event.target as Node)) {
         setIsDateDropdownOpen(false);
       }
+      if (exportDropdownRef.current && !exportDropdownRef.current.contains(event.target as Node)) {
+        setIsExportDropdownOpen(false);
+      }
     };
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -78,6 +83,10 @@ export const Transactions: React.FC = () => {
           setIsDateDropdownOpen(false);
           dateDropdownRef.current?.querySelector<HTMLButtonElement>('button[aria-haspopup]')?.focus();
         }
+        if (isExportDropdownOpen) {
+          setIsExportDropdownOpen(false);
+          exportDropdownRef.current?.querySelector<HTMLButtonElement>('button[aria-haspopup]')?.focus();
+        }
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -86,7 +95,7 @@ export const Transactions: React.FC = () => {
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isCategoryDropdownOpen, isBankDropdownOpen, isDateDropdownOpen]);
+  }, [isCategoryDropdownOpen, isBankDropdownOpen, isDateDropdownOpen, isExportDropdownOpen]);
 
   useEffect(() => {
     if (isBankDropdownOpen) {
@@ -114,6 +123,15 @@ export const Transactions: React.FC = () => {
       return () => clearTimeout(timer);
     }
   }, [isDateDropdownOpen]);
+
+  useEffect(() => {
+    if (isExportDropdownOpen) {
+      const timer = setTimeout(() => {
+        exportDropdownRef.current?.querySelector<HTMLButtonElement>('[role="option"]')?.focus();
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [isExportDropdownOpen]);
 
   const handleListboxKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     const container = e.currentTarget;
@@ -167,11 +185,11 @@ export const Transactions: React.FC = () => {
     }
   };
 
-  const handleExportCSV = () => {
+  const handleExportCSV = (exportTransactions: Transaction[], filename: string) => {
     const headers = ['Date', 'Type', 'Category', 'Amount', 'Bank', 'Merchant', 'Note', 'ID'];
     const csvContent = [
       headers.join(','),
-      ...transactions.map(t => {
+      ...exportTransactions.map(t => {
         return [
           format(new Date(t.date), 'yyyy-MM-dd'),
           t.type,
@@ -189,11 +207,12 @@ export const Transactions: React.FC = () => {
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    link.setAttribute('download', 'transactions.csv');
+    link.setAttribute('download', filename);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    setIsExportDropdownOpen(false);
   };
 
   const handleImportCSV = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -352,13 +371,56 @@ export const Transactions: React.FC = () => {
               ref={fileInputRef}
               onChange={handleImportCSV}
             />
-            <button
-              onClick={handleExportCSV}
-              className="p-2 rounded-full bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm"
-              title="Export CSV"
-            >
-              <Download size={18} />
-            </button>
+            <div className="relative" ref={exportDropdownRef}>
+              <button
+                aria-haspopup="listbox"
+                aria-expanded={isExportDropdownOpen}
+                onClick={() => {
+                  setIsExportDropdownOpen(prev => !prev);
+                  setIsBankDropdownOpen(false);
+                  setIsCategoryDropdownOpen(false);
+                  setIsDateDropdownOpen(false);
+                }}
+                className="p-2 rounded-full bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm"
+                title="Export CSV"
+              >
+                <Download size={18} />
+              </button>
+
+              <AnimatePresence>
+                {isExportDropdownOpen && (
+                  <motion.div
+                    role="listbox"
+                    aria-label="Export options"
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    transition={{ duration: 0.15, ease: "easeOut" }}
+                    onKeyDown={handleListboxKeyDown}
+                    className="absolute top-full right-0 z-50 mt-2 w-48 bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 p-2"
+                  >
+                    <button
+                      type="button"
+                      role="option"
+                      className="w-full text-left flex items-center gap-2 px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-xl cursor-pointer transition-colors focus:outline-none focus:bg-slate-50 dark:focus:bg-slate-700/50"
+                      onClick={() => handleExportCSV(transactions, 'all_transactions.csv')}
+                    >
+                      <span className="text-sm text-slate-700 dark:text-slate-300 font-medium">Export All Data</span>
+                    </button>
+                    {hasFilters && (
+                      <button
+                        type="button"
+                        role="option"
+                        className="w-full text-left flex items-center gap-2 px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-xl cursor-pointer transition-colors focus:outline-none focus:bg-slate-50 dark:focus:bg-slate-700/50"
+                        onClick={() => handleExportCSV(filteredTransactions, 'filtered_transactions.csv')}
+                      >
+                        <span className="text-sm text-slate-700 dark:text-slate-300 font-medium">Export Filtered Data</span>
+                      </button>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
             {filteredTransactions.length > 0 && (
               <button
                 onClick={() => setIsBulkDeleting(true)}
@@ -388,6 +450,7 @@ export const Transactions: React.FC = () => {
                   setIsBankDropdownOpen(prev => !prev);
                   setIsCategoryDropdownOpen(false);
                   setIsDateDropdownOpen(false);
+                  setIsExportDropdownOpen(false);
                 }}
                 className="appearance-none pl-4 pr-8 py-2 rounded-full bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20 whitespace-nowrap"
               >
@@ -462,6 +525,7 @@ export const Transactions: React.FC = () => {
                   setIsCategoryDropdownOpen(prev => !prev);
                   setIsBankDropdownOpen(false);
                   setIsDateDropdownOpen(false);
+                  setIsExportDropdownOpen(false);
                 }}
                 className="appearance-none pl-4 pr-8 py-2 rounded-full bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20 whitespace-nowrap"
               >
@@ -536,6 +600,7 @@ export const Transactions: React.FC = () => {
                   setIsDateDropdownOpen(prev => !prev);
                   setIsBankDropdownOpen(false);
                   setIsCategoryDropdownOpen(false);
+                  setIsExportDropdownOpen(false);
                 }}
                 className="appearance-none pl-10 pr-8 py-2 rounded-full bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20 whitespace-nowrap"
               >
