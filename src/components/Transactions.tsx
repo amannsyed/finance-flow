@@ -329,7 +329,7 @@ export const Transactions: React.FC = () => {
         </div>
 
         <div className="flex flex-col gap-3">
-          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide items-center justify-between">
+          <div className="flex flex-wrap gap-3 items-center justify-between">
             <div className="flex gap-2 shrink-0">
             <button
               onClick={() => setFilter('all')}
